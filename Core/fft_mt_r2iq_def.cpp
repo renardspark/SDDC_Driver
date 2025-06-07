@@ -24,7 +24,6 @@ void * fft_mt_r2iq::r2iqThreadf_def(r2iqThreadArg *th)
     DebugPrintln(TAG, "Initialization done");
 
     const fftwf_complex* filter = filterHw[decimation];
-    const bool lsb = this->getSideband();
     const auto filter2 = &filter[BASE_FFT_HALF_SIZE - fft_output_half_size];
 
     plan_freq2time = &plan_freq2time_per_decimation[decimation];
@@ -39,7 +38,9 @@ void * fft_mt_r2iq::r2iqThreadf_def(r2iqThreadArg *th)
         // (input_previous_block + inputbuffer_block_size - halfFft)
         const int16_t *last_buffer_end;
 
-        const int _center_frequency_bin = this->center_frequency_bin;  // Update LO tune is possible during run
+        // --- Hot-changeable settings --- //
+        const int _center_frequency_bin = this->center_frequency_bin;
+        const bool lsb = this->getSideband();
 
         {
             std::unique_lock<std::mutex> lk(mutexR2iqControl);
