@@ -24,6 +24,8 @@
  *    example: cyusb_linux_1.0.5/src/download_fx3.cpp
  */
 
+using namespace std;
+
 #include <errno.h>
 #include <stdio.h>
 #include <stdint.h>
@@ -34,6 +36,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <libusb.h>
+#include <stdexcept>
 
 #include "usb_device.h"
 #include "usb_device_internals.h"
@@ -49,8 +52,6 @@ static libusb_device_handle *find_usb_device(int index, libusb_context *ctx,
 static int load_image(libusb_device_handle *dev_handle,
                       const char *image, uint32_t size);
 static int validate_image(const uint8_t *image, const size_t size);
-static int transfer_image(const uint8_t *image,
-                          libusb_device_handle *dev_handle);
 static int list_endpoints(struct libusb_endpoint_descriptor endpoints[],
                           struct libusb_ss_endpoint_companion_descriptor ss_endpoints[],
                           libusb_device *device);
@@ -77,13 +78,14 @@ int usb_device_count_devices()
   int ret = libusb_init(0);
   if (ret < 0) {
     log_usb_error(ret, __func__, __FILE__, __LINE__);
-    goto FAIL0;
+    return ret;
   }
   libusb_device **list = 0;
   ssize_t nusbdevices = libusb_get_device_list(0, &list);
   if (nusbdevices < 0) {
     log_usb_error(nusbdevices, __func__, __FILE__, __LINE__);
-    goto FAIL1;
+    libusb_exit(0);
+    return nusbdevices;
   }
   int count = 0;
   for (ssize_t i = 0; i < nusbdevices; ++i) {
@@ -99,39 +101,31 @@ int usb_device_count_devices()
   }
   libusb_free_device_list(list, 1);
 
-  ret_val = count;
-
-FAIL1:
-  libusb_exit(0);
-FAIL0:
-  return ret_val;
+  return count;
 }
 
 
-int usb_device_get_device_list(struct usb_device_info **usb_device_infos)
+vector<USBDeviceInfo> usb_device_get_device_list()
 {
   const int MAX_STRING_BYTES = 256;
-
+  char temporary_string[MAX_STRING_BYTES];
   int ret_val = -1;
-
-  if (usb_device_infos == 0) {
-    log_error("argument usb_device_infos is a null pointer", __func__, __FILE__, __LINE__);
-    goto FAIL0;
-  }
 
   int ret = libusb_init(0);
   if (ret < 0) {
     log_usb_error(ret, __func__, __FILE__, __LINE__);
-    goto FAIL0;
+    throw runtime_error("error");
   }
+
   libusb_device **list = 0;
   ssize_t nusbdevices = libusb_get_device_list(0, &list);
   if (nusbdevices < 0) {
     log_usb_error(nusbdevices, __func__, __FILE__, __LINE__);
-    goto FAIL1;
+    libusb_exit(0);
+    throw runtime_error("error");
   }
 
-  struct usb_device_info *device_infos = (struct usb_device_info *) malloc((nusbdevices + 1) * sizeof(struct usb_device_info));
+  vector<USBDeviceInfo> device_infos;
   int count = 0;
   for (ssize_t j = 0; j < nusbdevices; ++j) {
     libusb_device *device = list[j];
@@ -143,6 +137,8 @@ int usb_device_get_device_list(struct usb_device_info **usb_device_infos)
         continue;
       }
 
+      USBDeviceInfo dev_info;
+
       libusb_device_handle *dev_handle = 0;
       ret = libusb_open(device, &dev_handle);
       if (ret < 0) {
@@ -150,41 +146,39 @@ int usb_device_get_device_list(struct usb_device_info **usb_device_infos)
         goto FAIL2;
       }
 
-      device_infos[count].manufacturer = (unsigned char *) malloc(MAX_STRING_BYTES);
-      device_infos[count].manufacturer[0] = '\0';
       if (desc.iManufacturer) {
         ret = libusb_get_string_descriptor_ascii(dev_handle, desc.iManufacturer,
-                      device_infos[count].manufacturer, MAX_STRING_BYTES);
+                      (unsigned char*)temporary_string, MAX_STRING_BYTES);
         if (ret < 0) {
           log_usb_error(ret, __func__, __FILE__, __LINE__);
           goto FAIL3;
         }
-        device_infos[count].manufacturer = (unsigned char *) realloc(device_infos[count].manufacturer, ret);
+
+        dev_info.manufacturer = temporary_string;
       }
 
-      device_infos[count].product = (unsigned char *) malloc(MAX_STRING_BYTES);
-      device_infos[count].product[0] = '\0';
       if (desc.iProduct) {
         ret = libusb_get_string_descriptor_ascii(dev_handle, desc.iProduct,
-                      device_infos[count].product, MAX_STRING_BYTES);
+                      (unsigned char*)temporary_string, MAX_STRING_BYTES);
         if (ret < 0) {
           log_usb_error(ret, __func__, __FILE__, __LINE__);
           goto FAIL3;
         }
-        device_infos[count].product = (unsigned char *) realloc(device_infos[count].product, ret);
+
+        dev_info.product = temporary_string;
       }
 
-      device_infos[count].serial_number = (unsigned char *) malloc(MAX_STRING_BYTES);
-      device_infos[count].serial_number[0] = '\0';
       if (desc.iSerialNumber) {
         ret = libusb_get_string_descriptor_ascii(dev_handle, desc.iSerialNumber,
-                      device_infos[count].serial_number, MAX_STRING_BYTES);
+                      (unsigned char*)temporary_string, MAX_STRING_BYTES);
         if (ret < 0) {
           log_usb_error(ret, __func__, __FILE__, __LINE__);
           goto FAIL3;
         }
-        device_infos[count].serial_number = (unsigned char *) realloc(device_infos[count].serial_number, ret);
+
+        dev_info.serial_number = temporary_string;
       }
+      device_infos.push_back(dev_info);
       ret = 0;
 FAIL3:
       libusb_close(dev_handle);
@@ -195,39 +189,12 @@ FAIL3:
     }
   }
 
-  device_infos[count].manufacturer = 0;
-  device_infos[count].product = 0;
-  device_infos[count].serial_number = 0;
-
-  *usb_device_infos = device_infos;
   ret_val = count;
+
+  return device_infos;
 
 FAIL2:
   libusb_free_device_list(list, 1);
-FAIL1:
-  libusb_exit(0);
-FAIL0:
-  return ret_val;
-}
-
-
-int usb_device_free_device_list(struct usb_device_info *usb_device_infos)
-{
-  for (struct usb_device_info *udi = usb_device_infos;
-       udi->manufacturer || udi->product || udi->serial_number;
-       ++udi) {
-    if (udi->manufacturer) {
-      free(udi->manufacturer);
-    }
-    if (udi->product) {
-      free(udi->product);
-    }
-    if (udi->serial_number) {
-      free(udi->serial_number);
-    }
-  }
-  free(usb_device_infos);
-  return 0;
 }
 
 
@@ -240,7 +207,7 @@ usb_device_t *usb_device_open(int index, const char* image,
   int ret = libusb_init(&ctx);
   if (ret < 0) {
     log_usb_error(ret, __func__, __FILE__, __LINE__);
-    goto FAIL0;
+    return ret_val;
   }
 
   //libusb_set_option(ctx, LIBUSB_OPTION_LOG_LEVEL, LIBUSB_LOG_LEVEL_DEBUG);
@@ -249,14 +216,16 @@ usb_device_t *usb_device_open(int index, const char* image,
   int needs_firmware = 0;
   libusb_device_handle *dev_handle = find_usb_device(index, ctx, &device, &needs_firmware);
   if (dev_handle == 0) {
-    goto FAIL1;
+    libusb_exit(0);
+    return 0;
   }
 
   if (needs_firmware) {
     ret = load_image(dev_handle, image, size);
     if (ret != 0) {
       log_error("load_image() failed", __func__, __FILE__, __LINE__);
-      goto FAIL2;
+      libusb_close(dev_handle);
+      return 0;
     }
 
     /* rescan USB to get a new device handle */
@@ -268,18 +237,21 @@ usb_device_t *usb_device_open(int index, const char* image,
     needs_firmware = 0;
     dev_handle = find_usb_device(index, ctx, &device, &needs_firmware);
     if (dev_handle == 0) {
-      goto FAIL1;
+      libusb_exit(0);
+      return 0;
     }
     if (needs_firmware) {
       log_error("device is still in boot loader mode", __func__, __FILE__, __LINE__);
-      goto FAIL2;
+      libusb_close(dev_handle);
+      return 0;
     }
   }
 
   int speed = libusb_get_device_speed(device);
   if ( speed == LIBUSB_SPEED_LOW || speed == LIBUSB_SPEED_FULL || speed == LIBUSB_SPEED_HIGH ) {
       log_error("USB 3.x SuperSpeed connection failed", __func__, __FILE__, __LINE__);
-      goto FAIL2;
+      libusb_close(dev_handle);
+      return 0;
   }
 
   /* list endpoints */
@@ -288,7 +260,8 @@ usb_device_t *usb_device_open(int index, const char* image,
   ret = list_endpoints(endpoints, ss_endpoints, device);
   if (ret < 0) {
     log_error("list_endpoints() failed", __func__, __FILE__, __LINE__);
-    goto FAIL2;
+    libusb_close(dev_handle);
+    return 0;
   }
   int nendpoints = ret;
   uint8_t bulk_in_endpoint_address = 0;
@@ -306,52 +279,46 @@ usb_device_t *usb_device_open(int index, const char* image,
   }
   if (bulk_in_endpoint_address == 0) {
     fprintf(stderr, "ERROR - bulk in endpoint not found\n");
-    goto FAIL2;
+    libusb_close(dev_handle);
+    return 0;
   }
 
   /* we are good here - create and initialize the usb_device */
-  usb_device_t *this = (usb_device_t *) malloc(sizeof(usb_device_t));
-  this->dev = device;
-  this->dev_handle = dev_handle;
-  this->context = ctx;
-  this->completed = 0;
-  this->nendpoints = nendpoints;
-  memset(this->endpoints, 0, sizeof(this->endpoints));
+  usb_device_t *t = (usb_device_t *) malloc(sizeof(usb_device_t));
+  t->dev = device;
+  t->dev_handle = dev_handle;
+  t->context = ctx;
+  t->completed = 0;
+  t->nendpoints = nendpoints;
+  memset(t->endpoints, 0, sizeof(t->endpoints));
   for (int i = 0; i < nendpoints; ++i) {
-    this->endpoints[i] = endpoints[i];
-    this->ss_endpoints[i] = ss_endpoints[i];
+    t->endpoints[i] = endpoints[i];
+    t->ss_endpoints[i] = ss_endpoints[i];
   }
-  this->bulk_in_endpoint_address = bulk_in_endpoint_address;
-  this->bulk_in_max_packet_size = bulk_in_max_packet_size;
-  this->bulk_in_max_burst = bulk_in_max_burst;
+  t->bulk_in_endpoint_address = bulk_in_endpoint_address;
+  t->bulk_in_max_packet_size = bulk_in_max_packet_size;
+  t->bulk_in_max_burst = bulk_in_max_burst;
 
-  ret_val = this;
-  return ret_val;
-
-FAIL2:
-  libusb_close(dev_handle);
-FAIL1:
-  libusb_exit(0);
-FAIL0:
+  ret_val = t;
   return ret_val;
 }
 
 
-void usb_device_close(usb_device_t *this)
+void usb_device_close(usb_device_t *t)
 {
-  libusb_close(this->dev_handle);
-  free(this);
+  libusb_close(t->dev_handle);
+  free(t);
   libusb_exit(0);
   return;
 }
 
 
-int usb_device_handle_events(usb_device_t *this)
+int usb_device_handle_events(usb_device_t *t)
 {
-  return libusb_handle_events_completed(this->context, &this->completed);
+  return libusb_handle_events_completed(t->context, &t->completed);
 }
 
-int usb_device_control(usb_device_t *this, uint8_t request, uint16_t value,
+int usb_device_control(usb_device_t *t, uint8_t request, uint16_t value,
                        uint16_t index, uint8_t *data, uint16_t length, int read) {
 
   const uint8_t bmWriteRequestType = LIBUSB_ENDPOINT_OUT | LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_RECIPIENT_DEVICE;
@@ -360,7 +327,7 @@ int usb_device_control(usb_device_t *this, uint8_t request, uint16_t value,
   int ret;
 
   if (!read) {
-      ret = libusb_control_transfer(this->dev_handle, bmWriteRequestType,
+      ret = libusb_control_transfer(t->dev_handle, bmWriteRequestType,
                                     request, value, index, data, length,
                                     timeout);
       if (ret < 0) {
@@ -370,7 +337,7 @@ int usb_device_control(usb_device_t *this, uint8_t request, uint16_t value,
   }
   else
   {
-      ret = libusb_control_transfer(this->dev_handle, bmReadRequestType,
+      ret = libusb_control_transfer(t->dev_handle, bmReadRequestType,
                                     request, value, index, data, length,
                                     timeout);
       // LIBUSB_ERROR_PIPE indicates that the device voluntarily closed
@@ -399,7 +366,7 @@ static libusb_device_handle *find_usb_device(int index, libusb_context *ctx,
   ssize_t nusbdevices = libusb_get_device_list(ctx, &list);
   if (nusbdevices < 0) {
     log_usb_error(nusbdevices, __func__, __FILE__, __LINE__);
-    goto FAIL0;
+    return (libusb_device_handle *)0;
   }
 
   int count = 0;
@@ -419,18 +386,19 @@ static libusb_device_handle *find_usb_device(int index, libusb_context *ctx,
     }
   }
 
+  libusb_free_device_list(list, 1);
+
   if (*device == 0) {
     fprintf(stderr, "ERROR - usb_device@%d not found\n", index);
-    goto FAIL1;
+    return 0;
   }
 
   libusb_device_handle *dev_handle = 0;
   int ret = libusb_open(*device, &dev_handle);
   if (ret < 0) {
     log_usb_error(ret, __func__, __FILE__, __LINE__);
-    goto FAIL1;
+    return 0;
   }
-  libusb_free_device_list(list, 1);
 
   ret = libusb_kernel_driver_active(dev_handle, 0);
   if (ret < 0) {
@@ -453,11 +421,7 @@ static libusb_device_handle *find_usb_device(int index, libusb_context *ctx,
 
 FAILA:
   libusb_close(dev_handle);
-  return ret_val;
 
-FAIL1:
-  libusb_free_device_list(list, 1);
-FAIL0:
   return ret_val;
 }
 
@@ -466,9 +430,6 @@ int load_image(libusb_device_handle *dev_handle, const char *image, uint32_t ima
 {
   int ret_val = -1;
 
-  const int fx_type = FX_TYPE_FX3;
-  const int img_type = IMG_TYPE_IMG;
-  const int stage = 0;
   verbose = 1;
 
   ret_val = fx3_load_ram(dev_handle, image);

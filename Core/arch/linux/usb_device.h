@@ -23,25 +23,21 @@
 #define __USB_DEVICE_H
 
 #include <libusb.h>
+#include <vector>
+#include <string>
 
+typedef struct USBDeviceInfo {
+  std::string manufacturer;
+  std::string product;
+  std::string serial_number;
+} USBDeviceInfo;
 
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 typedef struct usb_device usb_device_t;
 
-struct usb_device_info {
-  char *manufacturer;
-  char *product;
-  char *serial_number;
-};
-
 int usb_device_count_devices();
 
-int usb_device_get_device_list(struct usb_device_info **usb_device_infos);
-
-int usb_device_free_device_list(struct usb_device_info *usb_device_infos);
+std::vector<USBDeviceInfo> usb_device_get_device_list();
 
 usb_device_t *usb_device_open(int index, const char* image,
                               uint32_t size);
@@ -52,9 +48,5 @@ void usb_device_close(usb_device_t *t);
 
 int usb_device_control(usb_device_t *t, uint8_t request, uint16_t value,
                        uint16_t index, uint8_t *data, uint16_t length, int read);
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif /* __USB_DEVICE_H */

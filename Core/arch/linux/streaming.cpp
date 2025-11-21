@@ -24,6 +24,7 @@
  *  - Ettus Research UHD libusb1_zero_copy.cpp: https://github.com/EttusResearch/uhd/blob/master/host/lib/transport/libusb1_zero_copy.cpp
  */
 
+using namespace std;
 
 #include <errno.h>
 #include <stdio.h>
@@ -34,7 +35,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
-#include <stdatomic.h>
+#include <atomic>
 
 #include "streaming.h"
 #include "usb_device.h"
@@ -86,20 +87,20 @@ streaming_t *streaming_open_sync(usb_device_t *usb_device)
   }
 
   /* we are good here - create and initialize the streaming */
-  streaming_t *this = (streaming_t *) malloc(sizeof(streaming_t));
-  this->status = STREAMING_STATUS_READY;
-  this->random = 0;
-  this->usb_device = usb_device;
-  this->sample_rate = DEFAULT_SAMPLE_RATE;
-  this->frame_size = 0;
-  this->num_frames = 0;
-  this->callback = 0;
-  this->callback_context = 0;
-  this->frames = 0;
-  this->transfers = 0;
-  atomic_init(&this->active_transfers, 0);
+  streaming_t *t = (streaming_t *) malloc(sizeof(streaming_t));
+  t->status = STREAMING_STATUS_READY;
+  t->random = 0;
+  t->usb_device = usb_device;
+  t->sample_rate = DEFAULT_SAMPLE_RATE;
+  t->frame_size = 0;
+  t->num_frames = 0;
+  t->callback = 0;
+  t->callback_context = 0;
+  t->frames = 0;
+  t->transfers = 0;
+  atomic_init(&t->active_transfers, 0);
 
-  ret_val = this;
+  ret_val = t;
   return ret_val;
 }
 
@@ -159,16 +160,16 @@ streaming_t *streaming_open_async(usb_device_t *usb_device, uint32_t frame_size,
   }
 
   /* we are good here - create and initialize the streaming */
-  streaming_t *this = (streaming_t *) malloc(sizeof(streaming_t));
-  this->status = STREAMING_STATUS_READY;
-  this->random = 0;
-  this->usb_device = usb_device;
-  this->sample_rate = DEFAULT_SAMPLE_RATE;
-  this->frame_size = frame_size;
-  this->num_frames = num_frames;
-  this->callback = callback;
-  this->callback_context = callback_context;
-  this->frames = frames;
+  streaming_t *t = (streaming_t *) malloc(sizeof(streaming_t));
+  t->status = STREAMING_STATUS_READY;
+  t->random = 0;
+  t->usb_device = usb_device;
+  t->sample_rate = DEFAULT_SAMPLE_RATE;
+  t->frame_size = frame_size;
+  t->num_frames = num_frames;
+  t->callback = callback;
+  t->callback_context = callback_context;
+  t->frames = frames;
 
   /* populate the required libusb_transfer fields */
   struct libusb_transfer **transfers = (struct libusb_transfer **) malloc(num_frames * sizeof(struct libusb_transfer *));
@@ -177,118 +178,118 @@ streaming_t *streaming_open_async(usb_device_t *usb_device, uint32_t frame_size,
     libusb_fill_bulk_transfer(transfers[i], usb_device->dev_handle,
                               usb_device->bulk_in_endpoint_address,
                               frames[i], frame_size, streaming_read_async_callback,
-                              this, BULK_XFER_TIMEOUT);
+                              t, BULK_XFER_TIMEOUT);
   }
-  this->transfers = transfers;
-  atomic_init(&this->active_transfers, 0);
+  t->transfers = transfers;
+  atomic_init(&t->active_transfers, 0);
 
-  ret_val = this;
+  ret_val = t;
   return ret_val;
 }
 
 
-void streaming_close(streaming_t *this)
+void streaming_close(streaming_t *t)
 {
-  if (this->transfers) {
-    for (uint32_t i = 0; i < this->num_frames; ++i) {
-      libusb_free_transfer(this->transfers[i]);
+  if (t->transfers) {
+    for (uint32_t i = 0; i < t->num_frames; ++i) {
+      libusb_free_transfer(t->transfers[i]);
     }
-    free(this->transfers);
+    free(t->transfers);
   }
-  if (this->frames != 0) {
-    for (uint32_t i = 0; i < this->num_frames; ++i) {
+  if (t->frames != 0) {
+    for (uint32_t i = 0; i < t->num_frames; ++i) {
       #ifdef __linux__
-      libusb_dev_mem_free(this->usb_device->dev_handle, this->frames[i],
-                          this->frame_size);
+      libusb_dev_mem_free(t->usb_device->dev_handle, t->frames[i],
+                          t->frame_size);
       #elif defined(__APPLE__)
-      free(this->frames[i]);
+      free(t->frames[i]);
       #endif
     }
-    free(this->frames);
+    free(t->frames);
   }
-  free(this);
+  free(t);
   return;
 }
 
 
-int streaming_set_sample_rate(streaming_t *this, uint32_t sample_rate)
+int streaming_set_sample_rate(streaming_t *t, uint32_t sample_rate)
 {
   /* no checks yet */
-  this->sample_rate = sample_rate;
+  t->sample_rate = sample_rate;
   return 0;
 }
 
 
-int streaming_set_random(streaming_t *this, int random)
+int streaming_set_random(streaming_t *t, int random)
 {
-  this->random = random;
+  t->random = random;
   return 0;
 }
 
 
-int streaming_start(streaming_t *this)
+int streaming_start(streaming_t *t)
 {
-  if (this->status != STREAMING_STATUS_READY) {
-    fprintf(stderr, "ERROR - streaming_start() called with streaming status not READY: %d\n", this->status);
+  if (t->status != STREAMING_STATUS_READY) {
+    fprintf(stderr, "ERROR - streaming_start() called with streaming status not READY: %d\n", t->status);
     return -1;
   }
 
   /* if there is no callback, then streaming is synchronous - nothing to do */
-  if (this->callback == 0) {
-    this->status = STREAMING_STATUS_STREAMING;
+  if (t->callback == 0) {
+    t->status = STREAMING_STATUS_STREAMING;
     return 0;
   }
 
   /* submit all the transfers */
-  atomic_init(&this->active_transfers, 0);
-  for (uint32_t i = 0; i < this->num_frames; ++i) {
-    int ret = libusb_submit_transfer(this->transfers[i]);
+  atomic_init(&t->active_transfers, 0);
+  for (uint32_t i = 0; i < t->num_frames; ++i) {
+    int ret = libusb_submit_transfer(t->transfers[i]);
     if (ret < 0) {
       log_usb_error(ret, __func__, __FILE__, __LINE__);
-      this->status = STREAMING_STATUS_FAILED;
+      t->status = STREAMING_STATUS_FAILED;
       return -1;
     }
-    atomic_fetch_add(&this->active_transfers, 1);
+    atomic_fetch_add(&t->active_transfers, 1);
   }
 
-  this->status = STREAMING_STATUS_STREAMING;
+  t->status = STREAMING_STATUS_STREAMING;
 
   return 0;
 }
 
 
-int streaming_stop(streaming_t *this)
+int streaming_stop(streaming_t *t)
 {
   /* if there is no callback, then streaming is synchronous - nothing to do */
-  if (this->callback == 0) {
-    if (this->status == STREAMING_STATUS_STREAMING) {
-      this->status = STREAMING_STATUS_READY;
+  if (t->callback == 0) {
+    if (t->status == STREAMING_STATUS_STREAMING) {
+      t->status = STREAMING_STATUS_READY;
     }
     return 0;
   }
 
-  this->status = STREAMING_STATUS_CANCELLED;
+  t->status = STREAMING_STATUS_CANCELLED;
 
   /* flush all the events */
   struct timeval noblock = { 0, 0 };
-  while (this->active_transfers > 0) {
-    int ret = libusb_handle_events_timeout_completed(this->usb_device->context, &noblock, 0);
+  while (t->active_transfers > 0) {
+    int ret = libusb_handle_events_timeout_completed(t->usb_device->context, &noblock, 0);
     if (ret < 0) {
       log_usb_error(ret, __func__, __FILE__, __LINE__);
-      this->status = STREAMING_STATUS_FAILED;
+      t->status = STREAMING_STATUS_FAILED;
     }
     usleep(100);
   }
 
   /* cancel all the active transfers */
-  for (uint32_t i = 0; i < this->num_frames; ++i) {
-    int ret = libusb_cancel_transfer(this->transfers[i]);
+  for (uint32_t i = 0; i < t->num_frames; ++i) {
+    int ret = libusb_cancel_transfer(t->transfers[i]);
     if (ret < 0) {
       if (ret == LIBUSB_ERROR_NOT_FOUND)  {
         continue;
       }
       log_usb_error(ret, __func__, __FILE__, __LINE__);
-      this->status = STREAMING_STATUS_FAILED;
+      t->status = STREAMING_STATUS_FAILED;
     }
   }
 
@@ -297,36 +298,39 @@ int streaming_stop(streaming_t *this)
 }
 
 
-int streaming_reset_status(streaming_t *this)
+int streaming_reset_status(streaming_t *t)
 {
-  switch (this->status) {
+  switch (t->status) {
     case STREAMING_STATUS_READY:
       /* nothing to do here */
       return 0;
     case STREAMING_STATUS_CANCELLED:
     case STREAMING_STATUS_FAILED:
-      if (this->active_transfers > 0) {
-        fprintf(stderr, "ERROR - streaming_reset_status() called with %d transfers still active\n",
-                        this->active_transfers);
-        return -1;
+      {
+        int active_transfers = t->active_transfers;
+        if (active_transfers > 0) {
+          fprintf(stderr, "ERROR - streaming_reset_status() called with %d transfers still active\n",
+                          active_transfers);
+          return -1;
+        }
+        break;
       }
-      break;
     default:
       fprintf(stderr, "ERROR - streaming_reset_status() called with invalid status: %d\n",
-                      this->status);
+                      t->status);
       return -1;
   }
 
   /* we are good here; reset the status */
-  this->status = STREAMING_STATUS_READY;
+  t->status = STREAMING_STATUS_READY;
   return 0;
 }
 
 
-int streaming_read_sync(streaming_t *this, uint8_t *data, int length, int *transferred)
+int streaming_read_sync(streaming_t *t, uint8_t *data, int length, int *transferred)
 {
-  int ret = libusb_bulk_transfer(this->usb_device->dev_handle,
-                                 this->usb_device->bulk_in_endpoint_address,
+  int ret = libusb_bulk_transfer(t->usb_device->dev_handle,
+                                 t->usb_device->bulk_in_endpoint_address,
                                  data, length, transferred, BULK_XFER_TIMEOUT);
   if (ret < 0) {
     log_usb_error(ret, __func__, __FILE__, __LINE__);
@@ -334,7 +338,7 @@ int streaming_read_sync(streaming_t *this, uint8_t *data, int length, int *trans
   }
 
   /* remove ADC randomization */
-  if (this->random) {
+  if (t->random) {
     uint16_t *samples = (uint16_t *) data;
     int n = *transferred / 2;
     for (int i = 0; i < n; ++i) {
@@ -351,14 +355,14 @@ int streaming_read_sync(streaming_t *this, uint8_t *data, int length, int *trans
 /* internal functions */
 static void LIBUSB_CALL streaming_read_async_callback(struct libusb_transfer *transfer)
 {
-  streaming_t *this = (streaming_t *) transfer->user_data;
+  streaming_t *t = (streaming_t *) transfer->user_data;
   int ret;
   switch (transfer->status) {
     case LIBUSB_TRANSFER_COMPLETED:
       /* success!!! */
-      if (this->status == STREAMING_STATUS_STREAMING) {
+      if (t->status == STREAMING_STATUS_STREAMING) {
         /* remove ADC randomization */
-        if (this->random) {
+        if (t->random) {
           uint16_t *samples = (uint16_t *) transfer->buffer;
           int n = transfer->actual_length / 2;
           for (int i = 0; i < n; ++i) {
@@ -367,8 +371,8 @@ static void LIBUSB_CALL streaming_read_async_callback(struct libusb_transfer *tr
             }
           }
         }
-        this->callback(transfer->actual_length, transfer->buffer,
-                       this->callback_context);
+        t->callback(transfer->actual_length, transfer->buffer,
+                       t->callback_context);
         ret = libusb_submit_transfer(transfer);
         if (ret == 0) {
           return;
@@ -378,7 +382,7 @@ static void LIBUSB_CALL streaming_read_async_callback(struct libusb_transfer *tr
       break;
     case LIBUSB_TRANSFER_CANCELLED:
       /* librtlsdr does also ignore LIBUSB_TRANSFER_CANCELLED */
-      atomic_fetch_sub(&this->active_transfers, 1);
+      atomic_fetch_sub(&t->active_transfers, 1);
       return;
     case LIBUSB_TRANSFER_ERROR:
     case LIBUSB_TRANSFER_TIMED_OUT:
@@ -389,11 +393,11 @@ static void LIBUSB_CALL streaming_read_async_callback(struct libusb_transfer *tr
       break;
   }
 
-  this->status = STREAMING_STATUS_FAILED;
-  atomic_fetch_sub(&this->active_transfers, 1);
+  t->status = STREAMING_STATUS_FAILED;
+  atomic_fetch_sub(&t->active_transfers, 1);
 
   /* cancel all the active transfers */
-  for (uint32_t i = 0; i < this->num_frames; ++i) {
+  for (uint32_t i = 0; i < t->num_frames; ++i) {
     int ret = libusb_cancel_transfer(transfer);
     if (ret < 0) {
       if (ret == LIBUSB_ERROR_NOT_FOUND) {

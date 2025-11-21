@@ -158,37 +158,13 @@ bool fx3handler::ReadDebugTrace(uint8_t *pdata, uint8_t len)
     return usb_device_control(this->dev, READINFODEBUG, pdata[0], 0, (uint8_t *)pdata, len, 1) == 0;
 }
 
-bool fx3handler::Enumerate(unsigned char &idx, char *lbuf)
-{
-    TracePrintln(TAG, "%d, %s", idx, lbuf);
-
-    if (idx >= usb_device_count_devices()) return false;
-
-    if (usb_device_infos == nullptr) {
-        usb_device_get_device_list(&usb_device_infos);
-    }
-
-    auto dev = &usb_device_infos[idx];
-
-    strcpy (lbuf, (const char*)dev->product);
-    while (strlen(lbuf) < 18) strcat(lbuf, " ");
-    strcat(lbuf, "sn:");
-    strcat(lbuf, (const char*)dev->serial_number);
-
-    return true;
-}
-
 
 
 sddc_err_t fx3handler::SearchDevices()
 {
     TracePrintln(TAG, "");
 
-    if (usb_device_infos != nullptr) {
-        usb_device_free_device_list(usb_device_infos);
-    }
-
-    usb_device_get_device_list(&usb_device_infos);
+    usb_device_infos = usb_device_get_device_list();
 
     return ERR_SUCCESS;
 }
@@ -211,14 +187,14 @@ bool fx3handler::GetDevice(
 
     if (idx >= usb_device_count_devices()) return false;
 
-    if (usb_device_infos == nullptr) {
+    if (usb_device_infos.size() == 0) {
         SearchDevices();
     }
 
-    auto dev = &usb_device_infos[idx];
+    auto dev = usb_device_infos[idx];
 
-    strncpy(name, (const char*)dev->product, name_len);
-    strncpy(serial, (const char*)dev->serial_number, serial_len);
+    strncpy(name, dev.product.c_str(), name_len);
+    strncpy(serial, dev.serial_number.c_str(), serial_len);
 
     return true;
 }
@@ -229,20 +205,17 @@ vector<SDDC::DeviceItem> fx3handler::GetDeviceList()
 
     vector<SDDC::DeviceItem> dev_list;
 
-    struct usb_device_info *usb_device_list;
-    usb_device_get_device_list(&usb_device_list);
+    vector<USBDeviceInfo> usb_dev_list = usb_device_get_device_list();
 
-    for(uint8_t i = 0; i < usb_device_count_devices(); i++)
+    for(auto it = usb_dev_list.begin(); it < usb_dev_list.end(); it++)
     {
         SDDC::DeviceItem dev = {
-            .index = i,
-            .product = string(usb_device_list[i].product),
-            .serial_number = string(usb_device_list[i].serial_number)
+            .index = it - usb_dev_list.begin(),
+            .product = it->product,
+            .serial_number = it->serial_number
         };
         dev_list.push_back(dev);
     }
-
-    usb_device_free_device_list(usb_device_list);
 
     return dev_list;
 }

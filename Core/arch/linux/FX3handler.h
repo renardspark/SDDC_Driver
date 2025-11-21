@@ -28,7 +28,6 @@ public:
 	bool ReadDebugTrace(uint8_t* pdata, uint8_t len) override;
 	void StartStream(ringbuffer<int16_t>& input) override;
 	void StopStream() override;
-	bool Enumerate(unsigned char &idx, char *lbuf) override;
 	size_t GetDeviceListLength() override;
 	bool GetDevice(unsigned char &idx, char *name, size_t name_len, char *serial, size_t serial_len) override;
 	vector<SDDC::DeviceItem> GetDeviceList() override;
@@ -43,7 +42,7 @@ private:
 
 	static void PacketRead(uint32_t data_size, uint8_t *data, void *context);
 
-	struct usb_device_info *usb_device_infos;
+	std::vector<USBDeviceInfo> usb_device_infos;
 	usb_device_t *dev;
 	streaming_t *stream;
 	ringbuffer<int16_t> *inputbuffer;

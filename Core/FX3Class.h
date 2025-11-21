@@ -33,7 +33,6 @@ public:
 	virtual bool ReadDebugTrace(uint8_t* pdata, uint8_t len) = 0;
 	virtual void StartStream(ringbuffer<int16_t>& input) = 0;
 	virtual void StopStream() = 0;
-	virtual bool Enumerate(unsigned char& idx, char* lbuf) = 0;
 	virtual size_t GetDeviceListLength() = 0;
 	virtual bool GetDevice(unsigned char &idx, char *name, size_t name_len, char *serial, size_t serial_len) = 0;
 	virtual vector<SDDC::DeviceItem> GetDeviceList() = 0;
