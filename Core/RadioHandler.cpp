@@ -146,7 +146,7 @@ sddc_err_t RadioHandler::Init(uint8_t dev_index)
 
 	default:
 		hardware = new DummyRadio(fx3);
-		DbgPrintf("WARNING no SDR connected");
+		WarnPrintln(TAG, "Unable to determine the SDR model, defaulting to 'Dummy'");
 		break;
 	}
 
@@ -249,7 +249,7 @@ sddc_err_t RadioHandler::Start(bool convert_r2iq)
 	if(r2iqEnabled) r2iqCntrl->TurnOn();
 
 	// Driver starts receiving frames
-	fx3->StartStream(real_buffer/*, QUEUE_SIZE*/);
+	fx3->StartStream(real_buffer);
 
 	submit_thread = std::thread([this]() {
 		this->OnDataPacket();
@@ -332,7 +332,7 @@ vector<float> RadioHandler::GetRFGainSteps(sddc_rf_mode_t mode)
 array<float, 2> RadioHandler::GetRFGainRange(sddc_rf_mode_t mode)
 {
 	TracePrintln(TAG, "%d", mode);
-	
+
 	vector<float> gain_steps = GetRFGainSteps(mode);
 	DebugPrintln(TAG, "RF gain range for mode %d: min=%f, max=%f", mode, gain_steps.front(), gain_steps.back());
 	return array<float, 2>{gain_steps.front(), gain_steps.back()};
@@ -591,7 +591,7 @@ void RadioHandler::CaculateStats()
 			{
 				GetConsoleIn((char *)debdata, MAXLEN_D_USB);
 				if (debdata[0] !=0) 
-					DbgPrintf("%s", (char*)debdata);
+					DebugPrint(TAG, "%s", (char*)debdata);
 			}
 
 			if (hardware->ReadDebugTrace(debdata, MAXLEN_D_USB) == true) // there are message from FX3 ?
@@ -612,7 +612,6 @@ void RadioHandler::CaculateStats()
 					memset(debdata, 0, sizeof(debdata));
 				}
 			}
-			
 		}
 #else
 		std::this_thread::sleep_for(1s);
