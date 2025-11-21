@@ -28,8 +28,9 @@
 #include "../Interface.h"
 #include <math.h>      // atan => PI
 #include <stdbool.h>
+#include <cstdio>
 
-#define _DEBUG  // defined in VS configuration
+//#define _DEBUG  // defined in VS configuration
 #define VERBOSE_WARN
 //#define VERBOSE_TRACE
 //#define VERBOSE_TRACEEXTREME
@@ -56,28 +57,24 @@
 #endif
 
 #ifdef VERBOSE_WARN
-	#define WarnPrint(tag, fmt, ...)   printf("[SDDC] WARN  - %s: " fmt,      tag, ##__VA_ARGS__)
-	#define WarnPrintln(tag, fmt, ...) printf("[SDDC] WARN  - %s: " fmt "\n", tag, ##__VA_ARGS__)
+	#define WarnPrint(tag, fmt, ...)    fprintf(stderr, "[SDDC] WARN  - %s: " fmt,      tag, ##__VA_ARGS__)
+	#define WarnPrintln(tag, fmt, ...)  fprintf(stderr, "[SDDC] WARN  - %s: " fmt "\n", tag, ##__VA_ARGS__)
 #else
 	#define WarnPrint(tag, fmt, ...)
 	#define WarnPrintln(tag, fmt, ...)
 #endif
 
 #ifdef _DEBUG
-	#include <cstdio>
-	#define DbgPrintf(fmt, ...) printf("[SDDC] " fmt "\n", ##__VA_ARGS__)
-	#define DebugPrintf(fmt, ...) printf("[SDDC] DEBUG - %s - " fmt "\n", __FUNCTION__, ##__VA_ARGS__)
-
-	#define DebugPrint(tag, fmt, ...)   printf("[SDDC] DEBUG - %s: " fmt,      tag, ##__VA_ARGS__)
-	#define DebugPrintln(tag, fmt, ...) printf("[SDDC] DEBUG - %s: " fmt "\n", tag, ##__VA_ARGS__)
+	#define DebugPrint(tag, fmt, ...)   fprintf(stderr, "[SDDC] DEBUG - %s: " fmt,      tag, ##__VA_ARGS__)
+	#define DebugPrintln(tag, fmt, ...) fprintf(stderr, "[SDDC] DEBUG - %s: " fmt "\n", tag, ##__VA_ARGS__)
 #else
-	#define DbgPrintf(fmt, ...) do {} while(0)
-	#define DebugPrintf(fmt, ...) do {} while(0)
+	#define DebugPrint(tag, fmt, ...)
+	#define DebugPrintln(tag, fmt, ...)
 #endif
 
 #ifdef VERBOSE_TRACE
-	#define TracePrint(tag, fmt, ...)   printf("[SDDC] TRACE - %s: %d-%s(" fmt ")",   tag, __LINE__, __FUNCTION__, ##__VA_ARGS__)
-	#define TracePrintln(tag, fmt, ...) printf("[SDDC] TRACE - %s: %d-%s(" fmt ")\n", tag, __LINE__, __FUNCTION__, ##__VA_ARGS__)
+	#define TracePrint(tag, fmt, ...)   fprintf(stderr, "[SDDC] TRACE - %s: %d-%s(" fmt ")",   tag, __LINE__, __FUNCTION__, ##__VA_ARGS__)
+	#define TracePrintln(tag, fmt, ...) fprintf(stderr, "[SDDC] TRACE - %s: %d-%s(" fmt ")\n", tag, __LINE__, __FUNCTION__, ##__VA_ARGS__)
 #else
 	#define TracePrint(tag, fmt, ...)
 	#define TracePrintln(tag, fmt, ...)
@@ -91,12 +88,9 @@
 	#define TraceExtremePrintln(tag, fmt, ...)
 #endif
 
-#define SWVERSION           "1.3.0 RC1"
-#define SETTINGS_IDENTIFIER	"sddc_1.06"
-#define SWNAME				"ExtIO_sddc.dll"
+#define SWVERSION           "1.0.0"
+#define SWNAME				"SDDC_Driver"
 
-#define	QUEUE_SIZE 32
-#define WIDEFFTN  // test FFTN 8192
 
 #define FFTN_R_ADC (8192)       // FFTN used for ADC real stream DDC  tested at  2048, 8192, 32768, 131072
 
@@ -107,9 +101,6 @@
 #define RX888mk2_GAINFACTOR (1.08e-8f)      // RX888mk2
 
 
-
-#define HF_HIGH (32000000)    // 32M
-#define MW_HIGH ( 2000000)
 
 #define EXT_BLOCKLEN		512	* 64	/* 32768 only multiples of 512 */
 
