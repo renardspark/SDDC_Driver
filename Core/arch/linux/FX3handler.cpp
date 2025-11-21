@@ -25,7 +25,6 @@ fx3handler::fx3handler()
 {
     TracePrintln(TAG, "");
 
-    usb_device_infos = nullptr;
     dev = nullptr;
 }
 
@@ -145,10 +144,10 @@ void fx3handler::PacketRead(uint32_t data_size, uint8_t *data, void *context)
     TraceExtremePrintln(TAG, "%d, %p, %p", data_size, data, context);
     fx3handler *handler = (fx3handler *)context;
 
-    auto *ptr = handler->inputbuffer->getWritePtr();
     assert(data_size == handler->inputbuffer->getBlockSize() * sizeof(int16_t));
-    memcpy(ptr, data, data_size);
-    handler->inputbuffer->WriteDone();
+
+    vector<int16_t> vec_data((int16_t*)data, (int16_t*)data + data_size / sizeof(int16_t));
+    handler->inputbuffer->push(vec_data);
 }
 
 bool fx3handler::ReadDebugTrace(uint8_t *pdata, uint8_t len)

@@ -147,7 +147,7 @@ private:
 
 	// transfer variables
 	ringbuffer<int16_t> real_buffer;
-	ringbuffer<sddc_complex_t> iq_buffer;
+	ringbuffer<float> iq_buffer;
 
 	// threads
 	std::thread show_stats_thread;

@@ -8,16 +8,17 @@
 #include <mutex>
 #include <condition_variable>
 #include <atomic>
+#include <vector>
 
 #include "dsp/ringbuffer.h"
 
 // use up to this many threads
 #define N_MAX_R2IQ_THREADS 1
 #define PRINT_INPUT_RANGE  0
-#define NDECIDX 7  //number of srate
+#define NDECIDX 7 // Number of decimation steps
 
-static const int BASE_FFT_SCRAP_SIZE = 1024;
-static const int BASE_FFT_SIZE = FFTN_R_ADC;
+static const int BASE_FFT_SCRAP_SIZE = 2048;
+static const int BASE_FFT_SIZE = FFTN_R_ADC + BASE_FFT_SCRAP_SIZE;
 static const int BASE_FFT_HALF_SIZE = BASE_FFT_SIZE / 2;
 
 struct r2iqThreadArg;
@@ -28,7 +29,7 @@ public:
     fft_mt_r2iq();
     virtual ~fft_mt_r2iq();
 
-    void Init(float gain, ringbuffer<int16_t>* buffers, ringbuffer<sddc_complex_t>* obuffers);
+    void Init(float gain, ringbuffer<int16_t>* buffers, ringbuffer<float>* obuffers);
 
     void TurnOn();
     void TurnOff(void);
@@ -57,7 +58,7 @@ public:
 
 protected:
 
-    template<bool rand> void convert_float(float* output, const int16_t *input, int size)
+    template<bool rand> void convert_float(const int16_t *input, float* output, int size)
     {
         for(int m = 0; m < size; m++)
         {
@@ -111,7 +112,7 @@ private:
     ringbuffer<int16_t>* inputbuffer;    // pointer to input buffers
     size_t inputbuffer_block_size = 0;
 
-    ringbuffer<sddc_complex_t>* outputbuffer;    // pointer to output buffers
+    ringbuffer<float>* outputbuffer;    // pointer to output buffers
 
     // --- Decimation --- //
     int decimation = 0;   // selected decimation ratio
@@ -168,9 +169,10 @@ struct r2iqThreadArg {
 #endif
 	}
 
-	float *ADCinTime;                // point to each threads input buffers [nftt][n]
-	fftwf_complex *ADCinFreq;         // buffers in frequency
-	fftwf_complex *inFreqTmp;         // tmp decimation output buffers (after tune shift)
+    uint8_t thread_id;
+	float *ADCinTime;         // point to each threads input buffers [nftt][n]
+	fftwf_complex *ADCinFreq; // buffers in frequency
+	fftwf_complex *inFreqTmp; // tmp decimation output buffers (after tune shift)
 #if PRINT_INPUT_RANGE
 	int MinMaxBlockCount;
 	int16_t MinValue;

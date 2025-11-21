@@ -49,7 +49,7 @@ void RadioHandler::OnDataPacket()
 	{
 		if(r2iqEnabled)
 		{
-			auto buf = iq_buffer.getReadPtr();
+			auto buf = iq_buffer.pop();
 
 			if (!streamRunning)
 				break;
@@ -57,24 +57,22 @@ void RadioHandler::OnDataPacket()
 			if (fc != 0.0f)
 			{
 				std::unique_lock<std::mutex> lk(fc_mutex);
-				shift_limited_unroll_C_sse_inp_c((complexf*)buf, len_iq, stateFineTune);
+				shift_limited_unroll_C_sse_inp_c((complexf*)buf.data(), len_iq/2, stateFineTune);
 			}
 
-			callbackIQ(callbackIQContext, buf, len_iq);
+			callbackIQ(callbackIQContext, (sddc_complex_t*)buf.data(), len_iq/2);
 
-			iq_buffer.ReadDone();
-			count_iq_samples += len_iq;
+			count_iq_samples += len_iq/2;
 		}
 		else
 		{
-			auto buf = real_buffer.getReadPtr();
+			auto buf = real_buffer.pop();
 
 			if (!streamRunning)
 				break;
 
-			callbackReal(callbackRealContext, buf, len_real);
+			callbackReal(callbackRealContext, buf.data(), len_real);
 
-			real_buffer.ReadDone();
 			count_real_samples += len_real;
 		}
 	}
@@ -164,7 +162,7 @@ sddc_err_t RadioHandler::Init(uint8_t dev_index)
 
 	// May be improved : r2iq assumes that the output buffer has half
 	// the size of the input buffer (due to real to complex conversion)
-	iq_buffer.setBlockSize(transferSamples/2);
+	iq_buffer.setBlockSize(transferSamples);
 
 	this->r2iqCntrl = new fft_mt_r2iq();
 	r2iqCntrl->Init(hardware->getGain(), &real_buffer, &iq_buffer);
@@ -273,17 +271,20 @@ sddc_err_t RadioHandler::Stop()
 	{
 		streamRunning = false; // now waits for threads
 
-		r2iqCntrl->TurnOff();
-
-		fx3->StopStream();
-
-		show_stats_thread.join(); //first to be joined
-		DbgPrintf("show_stats_thread join2");
-
+		// First finish the output data thread
+		// to avoid it being stuck waiting for new data
 		submit_thread.join();
-		DbgPrintf("submit_thread join1");
 
-		sddc_err_t ret = hardware->StopStream(); // SDR stops sending frames
+		// Then we continue shutting down components in reverse order
+		r2iqCntrl->TurnOff();
+		fx3->StopStream();
+		DebugPrintln(TAG, "Signal pipeline stopped");
+
+		show_stats_thread.join();
+		DebugPrintln(TAG, "Stat thread finished");
+
+		// Disable stream on the SDR
+		sddc_err_t ret = hardware->StopStream();
 		if(ret != ERR_SUCCESS) return ret;
 	}
 	return ERR_SUCCESS;
