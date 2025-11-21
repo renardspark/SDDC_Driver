@@ -18,7 +18,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "../RadioHandler.h"
+#include "RadioHardware.h"
 
 #define ADC_FREQ (128u*1000*1000)
 #define IF_FREQ (ADC_FREQ / 4)
@@ -27,6 +27,8 @@
 #define LOW_MODE 0x00
 
 #define MODE HIGH_MODE
+
+const char TAG[] = "RX999Radio";
 
 RX999Radio::RX999Radio(fx3class *fx3)
     : RadioHardware(fx3)
@@ -45,6 +47,11 @@ RX999Radio::RX999Radio(fx3class *fx3)
     }
 }
 
+const array<float, 2> RX999Radio::GetADCSampleRateLimits()
+{
+    WarnPrintln(TAG, "I don't know the limits for this device, please set them before using it");
+    return {0, 0};
+}
 
 sddc_rf_mode_t RX999Radio::GetBestRFMode(uint64_t freq)
 {
@@ -82,7 +89,7 @@ sddc_err_t RX999Radio::SetRFMode(sddc_rf_mode_t mode)
 }
 
 
-sddc_err_t RX999Radio::SetRFAttenuation_HF(int att)
+sddc_err_t RX999Radio::SetRFAttenuation_HF(size_t att)
 {
     return ERR_NOT_COMPATIBLE;
 }
@@ -144,16 +151,14 @@ vector<float> RX999Radio::GetIFSteps_VHF()
     return GetIFSteps_HF();
 }
 
-sddc_err_t RX999Radio::SetIFGain_HF(int gain_index)
+sddc_err_t RX999Radio::SetIFGain_HF(size_t gain_index)
 {
     uint8_t gain = MODE | (gain_index + 1);
-
-    DbgPrintf("UpdateGainIF %d \n", gain);
 
     return Fx3->SetArgument(AD8340_VGA, gain) ? ERR_SUCCESS : ERR_FX3_TRANSFER_FAILED;
 }
 
-sddc_err_t RX999Radio::SetIFGain_VHF(int gain_index)
+sddc_err_t RX999Radio::SetIFGain_VHF(size_t gain_index)
 {
     return SetIFGain_HF(gain_index);
 }

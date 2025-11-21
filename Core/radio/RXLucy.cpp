@@ -19,7 +19,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "../RadioHandler.h"
+#include "RadioHardware.h"
 
 #define ADC_FREQ (64u*1000*1000)
 #define IF_FREQ (ADC_FREQ / 4)
@@ -28,6 +28,8 @@
 #define LOW_MODE 0x00
 
 #define MODE HIGH_MODE
+
+const char TAG[] = "RXLucyRadio";
 
 RXLucyRadio::RXLucyRadio(fx3class *fx3)
     : RadioHardware(fx3)
@@ -53,6 +55,12 @@ RXLucyRadio::RXLucyRadio(fx3class *fx3)
     }
 }
 
+const array<float, 2> RXLucyRadio::GetADCSampleRateLimits()
+{
+    WarnPrintln(TAG, "I don't know the limits for this device, please set them before using it");
+    return {0, 0};
+}
+
 
 sddc_rf_mode_t RXLucyRadio::GetBestRFMode(uint64_t freq)
 {
@@ -66,13 +74,12 @@ sddc_rf_mode_t RXLucyRadio::GetBestRFMode(uint64_t freq)
 }
 
 
-sddc_err_t RXLucyRadio::SetRFAttenuation_HF(int att)
+sddc_err_t RXLucyRadio::SetRFAttenuation_HF(size_t att)
 {
     if (att >= rf_steps_hf.size()) att = rf_steps_hf.size() - 1;
-    if (att < 0) att = 0;
+
     uint8_t d = rf_steps_hf.size() - att - 1;
 
-    DbgPrintf("UpdateattRF %f \n", this->rf_steps_hf[att]);
     return Fx3->SetArgument(VHF_ATTENUATOR, d) ? ERR_SUCCESS : ERR_FX3_TRANSFER_FAILED;
 }
 sddc_err_t RXLucyRadio::SetRFAttenuation_VHF(uint16_t)
@@ -80,17 +87,15 @@ sddc_err_t RXLucyRadio::SetRFAttenuation_VHF(uint16_t)
     return ERR_NOT_COMPATIBLE;
 }
 
-sddc_err_t RXLucyRadio::SetIFGain_HF(int att)  //HF103 now
+sddc_err_t RXLucyRadio::SetIFGain_HF(size_t att)  //HF103 now
 {
     if (att >= if_steps_hf.size()) att = if_steps_hf.size() - 1;
-    if (att < 0) att = 0;
-    uint8_t d = if_steps_hf.size() - att - 1;
 
-    DbgPrintf("UpdateattRF %f \n", this->if_steps_hf[att]);
+    uint8_t d = if_steps_hf.size() - att - 1;
 
     return Fx3->SetArgument(DAT31_ATT, d) ? ERR_SUCCESS : ERR_FX3_TRANSFER_FAILED;
 }
-sddc_err_t RXLucyRadio::SetIFGain_VHF(int att)
+sddc_err_t RXLucyRadio::SetIFGain_VHF(size_t att)
 {
     return ERR_NOT_COMPATIBLE;
 }

@@ -19,10 +19,12 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "../RadioHandler.h"
+#include "RadioHardware.h"
 
 #define R820T_FREQ (32000000)	// R820T reference frequency
 #define R820T2_IF_CARRIER (4570000)
+
+const char TAG[] = "BBRF103Radio";
 
 const vector<float> BBRF103Radio::rf_steps_vhf =  {
     0.0f, 0.9f, 1.4f, 2.7f, 3.7f, 7.7f, 8.7f, 12.5f, 14.4f, 15.7f,
@@ -43,6 +45,12 @@ BBRF103Radio::BBRF103Radio(fx3class* fx3):
     RadioHardware(fx3)
 {
     
+}
+
+const array<float, 2> BBRF103Radio::GetADCSampleRateLimits()
+{
+    WarnPrintln(TAG, "I don't know the limits for this device, please set them before using it");
+    return {0, 0};
 }
 
 sddc_rf_mode_t BBRF103Radio::GetBestRFMode(uint64_t freq)
@@ -79,10 +87,10 @@ sddc_err_t BBRF103Radio::SetRFMode(sddc_rf_mode_t mode)
     return ERR_NOT_COMPATIBLE;
 }
 
-sddc_err_t BBRF103Radio::SetRFAttenuation_HF(int att)
+sddc_err_t BBRF103Radio::SetRFAttenuation_HF(size_t att)
 {
     if (att > 2) att = 2;
-    if (att < 0) att = 0;
+
     switch (att)
     {
     case 1: //11
@@ -146,12 +154,12 @@ vector<float> BBRF103Radio::GetIFSteps_VHF()
     return this->if_steps_vhf;
 }
 
-sddc_err_t BBRF103Radio::SetIFGain_HF(int attIndex)
+sddc_err_t BBRF103Radio::SetIFGain_HF(size_t attIndex)
 {
     return ERR_NOT_COMPATIBLE;
 }
 
-sddc_err_t BBRF103Radio::SetIFGain_VHF(int attIndex)
+sddc_err_t BBRF103Radio::SetIFGain_VHF(size_t attIndex)
 {
     return Fx3->SetArgument(R82XX_VGA, (uint16_t)attIndex) ? ERR_SUCCESS : ERR_FX3_TRANSFER_FAILED;
 }

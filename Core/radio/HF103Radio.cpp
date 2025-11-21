@@ -19,7 +19,9 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "../RadioHandler.h"
+#include "RadioHardware.h"
+
+const char TAG[] = "HF103Radio";
 
 HF103Radio::HF103Radio(fx3class* fx3)
     : RadioHardware(fx3)
@@ -35,6 +37,12 @@ HF103Radio::HF103Radio(fx3class* fx3)
             ((i & 0x020) != 0) * 16.0f
         );
     }
+}
+
+const array<float, 2> HF103Radio::GetADCSampleRateLimits()
+{
+    WarnPrintln(TAG, "I don't know the limits for this device, please set them before using it");
+    return {0, 0};
 }
 
 sddc_rf_mode_t HF103Radio::GetBestRFMode(uint64_t freq)
@@ -71,13 +79,11 @@ uint32_t HF103Radio::GetTunerFrequency_VHF()
     return 0;
 }
 
-sddc_err_t HF103Radio::SetRFAttenuation_HF(int att)
+sddc_err_t HF103Radio::SetRFAttenuation_HF(size_t att)
 {
     if (att > step_size - 1) att = step_size - 1;
-    if (att < 0) att = 0;
-    uint8_t d = step_size - att - 1;
 
-    DbgPrintf("UpdateattRF %f \n", this->rf_steps_hf[att]);
+    uint8_t d = step_size - att - 1;
 
     return Fx3->SetArgument(DAT31_ATT, d) ? ERR_SUCCESS : ERR_FX3_TRANSFER_FAILED;
 }
@@ -104,11 +110,11 @@ vector<float> HF103Radio::GetIFSteps_VHF()
     return vector<float>();
 }
 
-sddc_err_t HF103Radio::SetIFGain_HF  (int attIndex)
+sddc_err_t HF103Radio::SetIFGain_HF  (size_t attIndex)
 {
     return ERR_NOT_COMPATIBLE;
 }
-sddc_err_t HF103Radio::SetIFGain_VHF (int attIndex)
+sddc_err_t HF103Radio::SetIFGain_VHF (size_t attIndex)
 {
     return ERR_NOT_COMPATIBLE;
 }

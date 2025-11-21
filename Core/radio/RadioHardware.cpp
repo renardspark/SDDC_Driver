@@ -34,6 +34,9 @@ uint32_t RadioHardware::GetADCSampleRate()
 }
 sddc_err_t RadioHardware::SetADCSampleRate(uint32_t adc_rate)
 {
+    const array<float, 2> limits = GetADCSampleRateLimits();
+    if(adc_rate < limits[0]) adc_rate = limits[0];
+    if(adc_rate > limits[1]) adc_rate = limits[1];
     sampleRate = adc_rate;
     return Fx3->Control(STARTADC, adc_rate) ? ERR_SUCCESS : ERR_FX3_TRANSFER_FAILED;
 }

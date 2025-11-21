@@ -21,6 +21,8 @@
 
 #include "RadioHardware.h"
 
+#define ADC_SAMPLE_RATE_MIN 0
+#define ADC_SAMPLE_RATE_MAX 130000000
 #define R828D_FREQ (16000000) // R820T reference frequency
 #define R828D_IF_CARRIER (4570000)
 
@@ -61,6 +63,11 @@ RX888R2Radio::RX888R2Radio(fx3class *fx3)
     }
 }
 
+const array<float, 2> RX888R2Radio::GetADCSampleRateLimits()
+{
+    return {ADC_SAMPLE_RATE_MIN, ADC_SAMPLE_RATE_MAX};
+}
+
 sddc_rf_mode_t RX888R2Radio::GetBestRFMode(uint64_t freq)
 {
     if (freq < 10 * 1000) return NOMODE;
@@ -74,6 +81,9 @@ sddc_rf_mode_t RX888R2Radio::GetBestRFMode(uint64_t freq)
 
 sddc_err_t RX888R2Radio::SetRFMode(sddc_rf_mode_t mode)
 {
+    if(currentRFMode == mode)
+        return ERR_SUCCESS;
+
     if(mode == VHFMODE)
     {
         currentRFMode = mode;
@@ -111,13 +121,15 @@ sddc_err_t RX888R2Radio::SetRFMode(sddc_rf_mode_t mode)
     return ERR_NOT_COMPATIBLE;
 }
 
-sddc_err_t RX888R2Radio::SetRFAttenuation_HF(int att)
+sddc_err_t RX888R2Radio::SetRFAttenuation_HF(size_t att)
 {
+    if(attenuationHFStep == att)
+        return ERR_SUCCESS;
+
     // hf mode
     if (att >= rf_steps_hf.size())
         att = rf_steps_hf.size() - 1;
-    if (att < 0)
-        att = 0;
+
     uint8_t d = rf_steps_hf.size() - att - 1;
 
     attenuationHFStep = att;
@@ -127,6 +139,9 @@ sddc_err_t RX888R2Radio::SetRFAttenuation_HF(int att)
 
 sddc_err_t RX888R2Radio::SetRFAttenuation_VHF(uint16_t att)
 {
+    if(attenuationVHFStep == att)
+        return ERR_SUCCESS;
+
     attenuationVHFStep = att;
     return Fx3->SetArgument(R82XX_ATTENUATOR, att) ? ERR_SUCCESS : ERR_FX3_TRANSFER_FAILED;
 }
@@ -148,7 +163,10 @@ uint32_t RX888R2Radio::GetTunerFrequency_VHF()
 }
 sddc_err_t RX888R2Radio::SetCenterFrequency_VHF(uint32_t freq)
 {
-    if(!Fx3->Control(TUNERTUNE, freq))
+    if(freqLO_VHF == freq)
+        return ERR_SUCCESS;
+
+    if(!Fx3->Control(TUNERTUNE, (uint64_t)freq))
         return ERR_FX3_TRANSFER_FAILED;
 
     freqLO_VHF = freq;
@@ -176,8 +194,11 @@ vector<float> RX888R2Radio::GetIFSteps_VHF()
     return this->if_steps_vhf;
 }
 
-sddc_err_t RX888R2Radio::SetIFGain_HF(int gain_index)
+sddc_err_t RX888R2Radio::SetIFGain_HF(size_t gain_index)
 {
+    if(gainHFStep == gain_index)
+        return ERR_SUCCESS;
+
     uint8_t gain;
     if (gain_index > GAIN_SWEET_POINT)
         gain = HIGH_MODE | (gain_index - GAIN_SWEET_POINT + 3);
@@ -189,8 +210,11 @@ sddc_err_t RX888R2Radio::SetIFGain_HF(int gain_index)
     return Fx3->SetArgument(AD8340_VGA, gain) ? ERR_SUCCESS : ERR_FX3_TRANSFER_FAILED;
 }
 
-sddc_err_t RX888R2Radio::SetIFGain_VHF(int gain_index)
+sddc_err_t RX888R2Radio::SetIFGain_VHF(size_t gain_index)
 {
+    if(gainVHFStep == gain_index)
+        return ERR_SUCCESS;
+
     gainVHFStep = gain_index;
     return Fx3->SetArgument(R82XX_VGA, (uint16_t)gain_index) ? ERR_SUCCESS : ERR_FX3_TRANSFER_FAILED;
 }
