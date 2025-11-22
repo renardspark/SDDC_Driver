@@ -32,7 +32,7 @@
 #include "config.h"
 #include "FX3Class.h"
 #include "radio/RadioHardware.h"
-#include "fft_mt_r2iq.h"
+#include "fft_mt_r2iq/fft_mt_r2iq.h"
 #include "dsp/ringbuffer.h"
 
 using namespace std;

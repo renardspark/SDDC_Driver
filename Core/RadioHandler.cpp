@@ -29,7 +29,6 @@
 #include "RadioHandler.h"
 #include "config.h"
 #include "../Interface.h"
-#include "fft_mt_r2iq.h"
 #include "PScope_uti.h"
 #include "pffft/pf_mixer.h"
 

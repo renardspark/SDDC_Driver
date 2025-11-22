@@ -1,4 +1,3 @@
-#include "license.txt"  
 /*
 The ADC input real stream of 16 bit samples (at Fs = 64 Msps in the example) is converted to:
 - 32 Msps float Fs/2 complex stream, or
@@ -13,11 +12,11 @@ The name fft_mt_r2iq stands for Fast Fourier Transform, Multi-Threaded, Real to 
 */
 
 #include "fft_mt_r2iq.h"
-#include "config.h"
+#include "../config.h"
 #include "fftw3.h"
-#include "RadioHandler.h"
+#include "../RadioHandler.h"
 
-#include "fir.h"
+#include "../fir.h"
 
 #include <assert.h>
 #include <utility>
@@ -300,7 +299,7 @@ void * fft_mt_r2iq::r2iqThreadf(r2iqThreadArg *th)
 {
 #ifdef NO_SIMD_OPTIM
 	DebugPrintln(TAG, "Hardware Capability: all SIMD features (AVX, AVX2, AVX512) deactivated\n");
-	return r2iqThreadf_def(th);
+	return r2iqThreadf_generic(th);
 #else
 #if defined(DETECT_AVX)
 	int info[4];
@@ -331,14 +330,14 @@ void * fft_mt_r2iq::r2iqThreadf(r2iqThreadArg *th)
 	else if (HW_AVX)
 		return r2iqThreadf_avx(th);
 	else
-		return r2iqThreadf_def(th);
+		return r2iqThreadf_generic(th);
 #elif defined(DETECT_NEON)
 	bool NEON = detect_neon();
 	DebugPrintln(TAG, "Hardware Capability: NEON:%d\n", NEON);
 	if (NEON)
 		return r2iqThreadf_neon(th);
 	else
-		return r2iqThreadf_def(th);
+		return r2iqThreadf_generic(th);
 #endif
 #endif
 }

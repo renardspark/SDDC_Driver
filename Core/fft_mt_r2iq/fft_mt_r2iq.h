@@ -1,7 +1,7 @@
 #pragma once
 
 #include "fftw3.h"
-#include "config.h"
+#include "../config.h"
 #include <algorithm>
 #include <string.h>
 #include <thread>
@@ -10,7 +10,7 @@
 #include <atomic>
 #include <vector>
 
-#include "dsp/ringbuffer.h"
+#include "../dsp/ringbuffer.h"
 
 // use up to this many threads
 #define N_MAX_R2IQ_THREADS 1
@@ -143,7 +143,7 @@ private:
 
     void *r2iqThreadf(r2iqThreadArg *th);   // thread function
 
-    void * r2iqThreadf_def(r2iqThreadArg *th);
+    void * r2iqThreadf_generic(r2iqThreadArg *th);
     void * r2iqThreadf_avx(r2iqThreadArg *th);
     void * r2iqThreadf_avx2(r2iqThreadArg *th);
     void * r2iqThreadf_avx512(r2iqThreadArg *th);

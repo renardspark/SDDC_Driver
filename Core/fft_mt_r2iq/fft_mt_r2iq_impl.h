@@ -26,19 +26,14 @@
     vector<float> iq_output(inputbuffer_block_size);
     size_t output_buffer_offset = 0;
 
+    // Pointer to the current input block
+    vector<int16_t> input_current_block;
+    // Pointer to the end of the previous input block minus BASE_FFT_SCRAP_SIZE
+    // (input_previous_block + inputbuffer_block_size - BASE_FFT_SCRAP_SIZE)
     vector<int16_t> last_block_end(BASE_FFT_SCRAP_SIZE);
 
     while(r2iqOn)
     {
-        // Pointer to the current input block
-        vector<int16_t> input_current_block;  
-        // Pointer to the end of the previous input block minus halfFft
-        // (input_previous_block + inputbuffer_block_size - halfFft)
-        const int16_t *last_buffer_end;
-
-        // --- Hot-changeable settings --- //
-        const int _center_frequency_bin = this->center_frequency_bin;
-
         {
             std::unique_lock<std::mutex> lk(mutexR2iqControl);
             input_current_block = inputbuffer->pop();
@@ -109,6 +104,8 @@
 #endif
         
         // decimate in frequency plus tuning
+
+        const int _center_frequency_bin = this->center_frequency_bin;
 
         // Calculate the parameters for the first half
         // Includes all frequencies above _center_frequency_bin
