@@ -33,6 +33,7 @@ else()
 endif (MSVC)
 
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -D_DEBUG")
+set(CMAKE_CXX_STANDARD 20)
 
 # Generatge firmware
 include(bin2h.cmake)
