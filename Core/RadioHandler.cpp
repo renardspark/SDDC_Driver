@@ -643,6 +643,7 @@ sddc_err_t RadioHandler::SetRand(bool new_state)
 sddc_rf_mode_t  RadioHandler::GetBestRFMode(uint64_t freq) { return hardware->GetBestRFMode(freq); };
 sddc_rf_mode_t  RadioHandler::GetRFMode()                  { return hardware->GetRFMode(); };
 
+array<float, 2> RadioHandler::GetADCSampleRateLimits()          { return hardware->GetADCSampleRateLimits(); };
 uint32_t	RadioHandler::GetADCSampleRate()                    { return hardware->GetADCSampleRate(); };
 sddc_err_t	RadioHandler::SetADCSampleRate(uint32_t samplefreq) { return hardware->SetADCSampleRate(samplefreq); };
 

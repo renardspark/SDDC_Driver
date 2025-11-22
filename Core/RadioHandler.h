@@ -69,6 +69,7 @@ public:
 	sddc_err_t		SetRFMode(sddc_rf_mode_t mode);
 
 	// --- ADC --- //
+	array<float, 2> GetADCSampleRateLimits();
 	uint32_t	    GetADCSampleRate();
 	sddc_err_t	    SetADCSampleRate(uint32_t samplefreq);
 

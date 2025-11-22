@@ -57,7 +57,7 @@ RXLucyRadio::RXLucyRadio(fx3class *fx3)
 
 const array<float, 2> RXLucyRadio::GetADCSampleRateLimits()
 {
-    WarnPrintln(TAG, "I don't know the limits for this device, please set them before using it");
+    ErrorPrintln(TAG, "I don't know the limits for this device, please set them before using it. Feel free to open an issue if needed");
     return {0, 0};
 }
 

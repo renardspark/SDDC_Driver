@@ -371,9 +371,10 @@ SoapySDR::RangeList SoapySDDC::getSampleRateRange(const int, const size_t) const
 {
     TracePrintln(TAG, "*, *");
 
-    SoapySDR::RangeList ranges;
+    array<float, 2> limits = radio_handler->GetADCSampleRateLimits();
 
-    ranges.push_back(SoapySDR::Range(1000000/2, 160000000/2));
+    SoapySDR::RangeList ranges;
+    ranges.push_back(SoapySDR::Range(limits[0]/2, limits[1]/2));
 
     return ranges;
 }
