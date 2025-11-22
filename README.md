@@ -6,21 +6,24 @@
 
 This project includes the following components :
 - **/Core** : The main library controlling the SDR from a computer
+  - **RadioHandler** : The API exposed by the Core module. Suitable to interact directly with the SDR from C++ programs
 - **/ExtIO_sddc** : The compatibility layer for ExtIO.dll and HDSDR
 - **/SoapySDDC** : The compatibility layer for [SoapySDR](https://github.com/pothosware/SoapySDR/wiki)
-- **/libsddc** : An API for C-based programs to interact directly with the SDR
+- **/libsddc** : A wrapper for C-based programs to interact directly with the SDR
 - **/SDDC_FX3** : The firmware source code of the BBRF103 and others
 
 
 ## Disclaimer
 
-This project could not exist without the work of **[Oscar Steila (ik1xpv)](https://github.com/ik1xpv)** and others towards the development of the official BBRF103 (and derivatives) drivers in the **[ExtIO_sddc](https://github.com/ik1xpv/ExtIO_sddc)** repository.
+This project could not exist without the work of **[Oscar Steila (ik1xpv)](https://github.com/ik1xpv)** and others towards the development of the official BBRF103 (and derivatives) drivers in the **[ExtIO_sddc](https://github.com/ik1xpv/ExtIO_sddc)** repository. I'm truly thankful to all these contributors, who helped ExtIO_sddc go this far !
 
 SDDC_Driver is my attempt as deeply rewriting the code of ExtIO_sddc in order to make it more clean and intuitive in my view.
 The objective is also to better separate the main driver code (Core module) from the ExtIO module, which was the only module available at the start of ExtIO_sddc.
 
+**Warning** : Consider this fork as no longer compatible with Windows, as I've not tried it on this platform. On the other end, Linux and MacOS should be fine.
 
-## Installation Instructions
+
+## How to use ?
 
 You can download the latest EXTIO driver from the releases: https://github.com/ik1xpv/ExtIO_sddc/releases.
 The direct link to the current version v1.2.0 Version released at 18/3/2021 is: https://github.com/ik1xpv/ExtIO_sddc/releases/download/v1.2.0/SDDC_EXTIO.ZIP.
