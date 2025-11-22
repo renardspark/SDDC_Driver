@@ -344,7 +344,7 @@ public:
     const char* GetName() override { return "Dummy"; }
     float getGain() override { return 0; }
 
-    const array<float, 2> GetADCSampleRateLimits() override { return array<float, 2>{ 0, 0 }; };
+    const array<float, 2> GetADCSampleRateLimits() override { return array<float, 2>{ 1000000, 64000000 }; };
 
     sddc_rf_mode_t GetBestRFMode(uint64_t) override { return HFMODE; }
     sddc_err_t SetRFMode(sddc_rf_mode_t) override { return ERR_SUCCESS; }

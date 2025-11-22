@@ -10,9 +10,11 @@
 
 using namespace std::chrono;
 
-class fx3handler : public fx3class
+class fx3handler2 : public fx3class
 {
-    bool Open(uint8_t)
+    ~fx3handler2() {}
+
+    bool Open(SDDC::DeviceItem)
     {
         return true;
     }
@@ -42,7 +44,8 @@ class fx3handler : public fx3class
             0, FIRMWARE_VER_MAJOR, FIRMWARE_VER_MINOR, 0
         };
 
-        *data = *(uint32_t*)d;
+        memcpy(data, d, 4);
+
         return true;
     }
 
@@ -58,14 +61,14 @@ class fx3handler : public fx3class
     std::thread emuthread;
     bool run;
 	long nxfers;
-    void StartStream(ringbuffer<int16_t>& input, int numofblock)
+    void StartStream(ringbuffer<int16_t>& input)
     {
         input.setBlockSize(transferSamples);
         run = true;
         emuthread = std::thread([&input, this]{
             while(run)
             {
-                vector<int16_t> put(input.getWriteCount(), 0x5A);
+                vector<int16_t> put(transferSamples, 0x5A5A);
                 input.push(put);
                 ++nxfers;
                 std::this_thread::sleep_for(1ms);
@@ -88,11 +91,37 @@ class fx3handler : public fx3class
         return true;
     }
 
+    vector<SDDC::DeviceItem> GetDeviceList()
+    {
+        return vector<SDDC::DeviceItem>();
+    }
+
     
 public:
 	long Xfers(bool clear) { long rv=nxfers; if (clear) nxfers=0; return rv; }
 
 
+};
+
+class testRadioHandler: public RadioHandler
+{
+public:
+    testRadioHandler()
+    {
+        RadioHandler();
+        fx3 = new fx3handler2();
+    }
+
+    static vector<SDDC::DeviceItem> GetDeviceList()
+    {
+        vector<SDDC::DeviceItem> devs;
+        devs.push_back(SDDC::DeviceItem{
+            .index = 0,
+            .product = "Blank",
+            .serial_number = "Blank"
+        });
+        return devs;
+    }
 };
 
 static uint32_t frame_count;
@@ -110,15 +139,17 @@ namespace {
 
 TEST_CASE(CoreFixture, OpenTest)
 {
-    auto radio = new RadioHandler();
+    auto radio = new testRadioHandler();
 
-    radio = new RadioHandler();
+    radio = new testRadioHandler();
     delete radio;
 }
 
 TEST_CASE(CoreFixture, BasicTest)
 {
-    auto radio = new RadioHandler();
+    vector<SDDC::DeviceItem> devices = testRadioHandler::GetDeviceList();
+    auto radio = new testRadioHandler();
+    radio->Init(devices[0]);
 
     radio->AttachIQ(Callback);
 
@@ -126,8 +157,14 @@ TEST_CASE(CoreFixture, BasicTest)
     REQUIRE_EQUAL(radio->getHardwareName(), "Dummy");
 
     REQUIRE_EQUAL(radio->GetADCSampleRate(), 64000000u);
+    radio->SetADCSampleRate(32000000);
+    REQUIRE_EQUAL(radio->GetADCSampleRate(), 32000000u);
+
+    // Test values out of bounds
+    radio->SetADCSampleRate(0);
+    REQUIRE_EQUAL(radio->GetADCSampleRate(), 1000000u);
     radio->SetADCSampleRate(128000000);
-    REQUIRE_EQUAL(radio->GetADCSampleRate(), 128000000u);
+    REQUIRE_EQUAL(radio->GetADCSampleRate(), 64000000u);
 
     REQUIRE_EQUAL(radio->GetDither(), false);
     radio->SetDither(true);
@@ -154,8 +191,8 @@ TEST_CASE(CoreFixture, BasicTest)
 
 TEST_CASE(CoreFixture, R2IQTest)
 {
-    vector<SDDC::DeviceItem> devices = RadioHandler::GetDeviceList();
-    auto radio = new RadioHandler();
+    vector<SDDC::DeviceItem> devices = testRadioHandler::GetDeviceList();
+    auto radio = new testRadioHandler();
     radio->Init(devices[0]);
 
     radio->AttachIQ(Callback);
@@ -171,7 +208,7 @@ TEST_CASE(CoreFixture, R2IQTest)
 
         REQUIRE_TRUE(frame_count > 0);
         REQUIRE_TRUE(totalsize > 0);
-        REQUIRE_EQUAL(totalsize / frame_count, transferSamples);
+        REQUIRE_EQUAL(totalsize / frame_count, transferSamples/2);
     }
 
     delete radio;
@@ -179,8 +216,8 @@ TEST_CASE(CoreFixture, R2IQTest)
 
 TEST_CASE(CoreFixture, TuneTest)
 {
-    vector<SDDC::DeviceItem> devices = RadioHandler::GetDeviceList();
-    auto radio = new RadioHandler();
+    vector<SDDC::DeviceItem> devices = testRadioHandler::GetDeviceList();
+    auto radio = new testRadioHandler();
     radio->Init(devices[0]);
 
     radio->AttachIQ(Callback);
