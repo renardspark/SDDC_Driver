@@ -442,7 +442,7 @@ SoapySDR::ArgInfoList SoapySDDC::getSettingInfo(void) const
     dither.key = "SetDither";
     dither.value = "false";
     dither.name = "Dither";
-    dither.description = "Enable dither";
+    dither.description = "Enable ADC dithering";
     dither.type = SoapySDR::ArgInfo::BOOL;
     setArgs.push_back(dither);
 
@@ -450,15 +450,15 @@ SoapySDR::ArgInfoList SoapySDDC::getSettingInfo(void) const
     pga.key = "SetPGA";
     pga.value = "false";
     pga.name = "PGA";
-    pga.description = "Enable Programmable Gain Amplifier";
+    pga.description = "Switch between low and high sensitivity mode on the ADC";
     pga.type = SoapySDR::ArgInfo::BOOL;
     setArgs.push_back(pga);
 
     SoapySDR::ArgInfo rand;
     rand.key = "SetRand";
     rand.value = "false";
-    rand.name = "ADC random";
-    rand.description = "Enable ADC random generation";
+    rand.name = "ADC digital randomization";
+    rand.description = "ADC digital output randomization";
     rand.type = SoapySDR::ArgInfo::BOOL;
     setArgs.push_back(rand);
 
