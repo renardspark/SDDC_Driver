@@ -56,10 +56,12 @@ bool fx3handler::Open(SDDC::DeviceItem dev_selector)
     dev = usb_device_open(usb_device_infos[dev_selector.index], firmware_data, firmware_size);
     DebugPrintln(TAG, "Open device with dev_index=%d", dev_selector.index);
 
+    if(dev == nullptr) return false;
+
     usleep(5000);
     Control(STOPFX3, (uint8_t)0);
 
-    return dev != nullptr;
+    return true;
 }
 
 bool fx3handler::Close(void)

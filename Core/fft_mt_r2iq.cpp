@@ -166,7 +166,7 @@ void fft_mt_r2iq::Init(float gain, ringbuffer<int16_t> *input, ringbuffer<float>
 	DebugPrintln(TAG, "Output block size: %d", obuffers->getBlockSize());
 
 	this->GainScale = gain;
-	DebugPrintln(TAG, "Hardware gain : %f", this->GainScale);
+	DebugPrintln(TAG, "Hardware gain : %.12f", this->GainScale);
 
 	// number of ffts needed to process one full buffer block
 	// including an overlap with the previous samples (required by the overlap-save method)

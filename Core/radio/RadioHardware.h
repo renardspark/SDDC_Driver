@@ -108,7 +108,7 @@ class RadioHardware {
         fx3class* Fx3;
         uint32_t gpios = 0;
 
-        uint32_t sampleRate;
+        uint32_t sampleRate = 0;
         sddc_rf_mode_t currentRFMode = NOMODE;
 
         bool stateDither    = false;

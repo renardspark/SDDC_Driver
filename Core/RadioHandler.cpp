@@ -93,8 +93,10 @@ RadioHandler::RadioHandler():
 {
 	TracePrintln(TAG, "");
 
-	fx3 = CreateUsbHandler();
-	stateFineTune = new shift_limited_unroll_C_sse_data_t();
+	this->fx3 = CreateUsbHandler();
+	this->stateFineTune = new shift_limited_unroll_C_sse_data_t();
+
+	this->r2iqCntrl = new fft_mt_r2iq();
 }
 
 sddc_err_t RadioHandler::Init(SDDC::DeviceItem dev_index)
@@ -164,7 +166,6 @@ sddc_err_t RadioHandler::Init(SDDC::DeviceItem dev_index)
 	// the size of the input buffer (due to real to complex conversion)
 	iq_buffer.setBlockSize(transferSamples);
 
-	this->r2iqCntrl = new fft_mt_r2iq();
 	r2iqCntrl->Init(hardware->getGain(), &real_buffer, &iq_buffer);
 
 	return ERR_SUCCESS;
@@ -182,6 +183,8 @@ RadioHandler::~RadioHandler()
 
 sddc_err_t RadioHandler::AttachReal(void (*callback)(void*context, const int16_t*, uint32_t), void *context)
 {
+	TracePrintln(TAG, "");
+
 	this->callbackReal = callback;
 	this->callbackRealContext = context;
 
@@ -190,6 +193,8 @@ sddc_err_t RadioHandler::AttachReal(void (*callback)(void*context, const int16_t
 
 sddc_err_t RadioHandler::AttachIQ(void (*callback)(void*context, const sddc_complex_t*, uint32_t), void *context)
 {
+	TracePrintln(TAG, "");
+
 	this->callbackIQ = callback;
 	this->callbackIQContext = context;
 

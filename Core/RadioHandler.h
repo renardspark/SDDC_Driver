@@ -127,9 +127,10 @@ public:
 	static sddc_err_t GetDevice(uint8_t dev_index, sddc_device_t *dev_pointer);
 	static vector<SDDC::DeviceItem> GetDeviceList();
 
-private:
+protected:
 	fx3class *fx3;
 
+private:
 	void CaculateStats();
 	void OnDataPacket();
 
