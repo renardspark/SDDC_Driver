@@ -31,8 +31,9 @@
 #include <cstdio>
 
 //#define _DEBUG  // defined in VS configuration
+#define VERBOSE_ERROR
 #define VERBOSE_WARN
-//#define VERBOSE_TRACE
+#define VERBOSE_TRACE
 //#define VERBOSE_TRACEEXTREME
 
 // macro to call callback function with just status extHWstatusT
@@ -54,6 +55,14 @@
 #else
 	#define EnterFunction()
 	#define EnterFunction1(v1)
+#endif
+
+#ifdef VERBOSE_ERROR
+	#define ErrorPrint(tag, fmt, ...)   fprintf(stderr, "[SDDC] ERROR - %s: %s (%s:%d) " fmt,      tag, __FUNCTION__, __FILE__, __LINE__, ##__VA_ARGS__)
+	#define ErrorPrintln(tag, fmt, ...) fprintf(stderr, "[SDDC] ERROR - %s: " fmt " (%s:%d)\n", tag, ##__VA_ARGS__, __FILE__, __LINE__)
+#else
+	#define ErrorPrint(tag, fmt, ...)
+	#define ErrorPrintln(tag, fmt, ...)
 #endif
 
 #ifdef VERBOSE_WARN
