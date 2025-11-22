@@ -18,22 +18,22 @@ class fx3handler2 : public fx3class
         return true;
     }
 
-    bool Control(FX3Command command, uint8_t data = 0)
+    bool Control(FX3Command, uint8_t)
     {
         return true;
     }
 
-    bool Control(FX3Command command, uint32_t data)
+    bool Control(FX3Command, uint32_t)
     {
         return true;
     }
 
-    bool Control(FX3Command command, uint64_t data)
+    bool Control(FX3Command, uint64_t)
     {
         return true;
     }
 
-    bool SetArgument(uint16_t index, uint16_t value)
+    bool SetArgument(uint16_t, uint16_t)
     {
         return true;
     }
@@ -48,12 +48,12 @@ class fx3handler2 : public fx3class
         return true;
     }
 
-    bool Enumerate(unsigned char& idx, char* lbuf)
+    bool Enumerate(unsigned char&, char*)
     {
         return true;
     }
 
-    bool ReadDebugTrace(uint8_t* pdata, uint8_t len) {
+    bool ReadDebugTrace(uint8_t*, uint8_t) {
         return true;
     }
 
@@ -85,7 +85,7 @@ class fx3handler2 : public fx3class
         return 0;
     }
 
-    bool GetDevice(unsigned char &a, char *b, size_t c, char *d, size_t e)
+    bool GetDevice(unsigned char &, char *, size_t, char *, size_t)
     {
         return true;
     }
@@ -126,7 +126,7 @@ public:
 static uint32_t frame_count;
 static uint64_t totalsize;
 
-static void Callback(void* context, const sddc_complex_t* data, uint32_t len)
+static void Callback(void*, const sddc_complex_t*, uint32_t len)
 {
     frame_count++;
     totalsize += len;

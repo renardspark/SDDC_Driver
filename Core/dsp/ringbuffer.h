@@ -139,21 +139,18 @@ public:
                 return;
         }
 
-        //if(log2) printf("read buffer empty %ld\n", blocks_available.load());
-
         if(blocks_available <= 0)
         {
             std::unique_lock<std::mutex> lk(mutex);
 
             emptyCount++;
             nonemptyCV.wait(lk, [this] {
-                //if(log2) {printf("read buffer should be non empty : %d\n", (blocks_available.load() > 0));}
                 return blocks_available > 0;
             });
         }
     }
 
-    void WaitUntilNotFull(bool log = false)
+    void WaitUntilNotFull()
     {
         if (stopped) return;
 
@@ -162,8 +159,6 @@ public:
             if (blocks_available < max_count)
                 return;
         }
-
-        //if(log) printf("read buffer full %ld, %ld\n", blocks_available.load(), max_count);
 
         if (blocks_available >= max_count)
         {

@@ -418,61 +418,6 @@ int load_image(libusb_device_handle *dev_handle, const char *image, uint32_t ima
   return ret_val;
 }
 
-
-static int transfer_image(const uint8_t *image,
-                          libusb_device_handle *dev_handle)
-{
-  const uint8_t bmRequestType = LIBUSB_ENDPOINT_OUT | LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_RECIPIENT_DEVICE;
-  const uint8_t bRequest = 0xa0;            // vendor command
-  const unsigned int timeout = 5000;        // timeout (in ms) for each command
-  const size_t max_write_size = 2 * 1024;   // max write size in bytes
- 
-  // skip first word with 'CY' magic
-  uint32_t *current = (uint32_t *) image + 1;
-
-  while (1) {
-    uint32_t loadSz = *current++;
-    if (loadSz == 0) {
-      break;
-    }
-    uint32_t address = *current++;
-
-    unsigned char *data = (unsigned char *) current;
-    for (size_t nleft = loadSz * 4; nleft > 0; ) {
-      uint16_t wLength = nleft > max_write_size ? max_write_size : nleft;
-      int ret = libusb_control_transfer(dev_handle, bmRequestType, bRequest,
-                                        address & 0xffff, address >> 16,
-                                        data, wLength, timeout);
-      if (ret < 0) {
-        USB_ERROR_PRINTLN(TAG, ret);
-        return -1;
-      }
-      if (!(ret == wLength)) {
-        fprintf(stderr, "ERROR - libusb_control_transfer() returned less bytes than expected - actual=%hu expected=%hu\n", ret, wLength);
-        return -1;
-      }
-      data += wLength;
-      nleft -= wLength;
-    }
-    current += loadSz;
-  }
-
-  uint32_t entryAddr = *current++;
-  uint32_t checksum __attribute__((unused)) = *current++;
-
-  sleep(1);
-
-  int ret = libusb_control_transfer(dev_handle, bmRequestType, bRequest,
-                                    entryAddr & 0xffff, entryAddr >> 16,
-                                    0, 0, timeout);
-  if (ret < 0) {
-    log_usb_warning(ret, __func__, __FILE__, __LINE__);
-  }
-
-  return 0;
-}
-
-
 static int list_endpoints(struct libusb_endpoint_descriptor endpoints[],
                           struct libusb_ss_endpoint_companion_descriptor ss_endpoints[],
                           libusb_device *device)

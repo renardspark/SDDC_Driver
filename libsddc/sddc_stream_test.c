@@ -93,7 +93,7 @@ clock_gettime(int X, struct timeval* tv)
 #endif
 
 
-static void count_bytes_callback(uint32_t data_size, uint8_t *data,
+static void count_bytes_callback(uint32_t data_size, sddc_complex_t *data,
                                  void *context);
 
 static unsigned long long received_samples = 0;
@@ -148,7 +148,7 @@ int main(int argc, char **argv)
     goto DONE;
   }
 
-  if (sddc_set_stream_callback(sddc, count_bytes_callback, sddc) != ERR_SUCCESS) {
+  if (sddc_set_stream_callback(sddc, (sddc_read_async_cb_t)count_bytes_callback, sddc) != ERR_SUCCESS) {
     fprintf(stderr, "ERROR - sddc_set_async_params() failed\n");
     goto DONE;
   }
@@ -169,7 +169,7 @@ int main(int argc, char **argv)
   /* todo: move this into a thread */
   stop_reception = 0;
   clock_gettime(CLOCK_REALTIME, &clk_start);
-  while (!stop_reception) sleep(1);
+  while (!stop_reception);
 
   fprintf(stderr, "finished. now stop streaming ..\n");
   if (sddc_stop_streaming(sddc) < 0) {
@@ -204,7 +204,7 @@ DONE:
 }
 
 static void count_bytes_callback(uint32_t data_size,
-                                 uint8_t *data,
+                                 sddc_complex_t *data,
                                  void *context)
 {
   if (stop_reception)

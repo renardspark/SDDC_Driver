@@ -347,7 +347,7 @@ float RadioHandler::GetRFGain()
 
 	sddc_rf_mode_t mode = hardware->GetRFMode();
 
-	int step = 0;
+	unsigned int step = 0;
 	switch(mode)
 	{
 		case HFMODE:
@@ -362,7 +362,7 @@ float RadioHandler::GetRFGain()
 
 	vector<float> gain_steps = GetRFGainSteps(mode);
 
-	if(step >= 0 && step < gain_steps.size())
+	if(step < gain_steps.size())
 	{
 		DebugPrintln(TAG, "RF gain for mode %d = %f, step = %d", mode, gain_steps[step], step);
 		return gain_steps[step];
@@ -444,7 +444,7 @@ float RadioHandler::GetIFGain()
 
 	sddc_rf_mode_t mode = hardware->GetRFMode();
 
-	int step = 0;
+	unsigned int step = 0;
 	switch(mode)
 	{
 		case HFMODE:
@@ -459,7 +459,7 @@ float RadioHandler::GetIFGain()
 
 	vector<float> gain_steps = GetIFGainSteps(mode);
 
-	if(step >= 0 && step < gain_steps.size())
+	if(step < gain_steps.size())
 	{
 		DebugPrintln(TAG, "IF gain for mode %d = %f, step = %d", mode, gain_steps[step], step);
 		return gain_steps[step];
