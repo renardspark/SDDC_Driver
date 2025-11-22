@@ -33,7 +33,7 @@
 #define HIGH_GAIN_RATIO (0.409f)
 #define LOW_GAIN_RATIO (0.059f)
 
-const char TAG[] = "RX888R2Radio";
+#define TAG "RX888R2Radio"
 
 const vector<float> RX888R2Radio::rf_steps_vhf = {
     0.0f, 0.9f, 1.4f, 2.7f, 3.7f, 7.7f, 8.7f, 12.5f, 14.4f, 15.7f,

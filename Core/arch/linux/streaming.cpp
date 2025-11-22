@@ -24,7 +24,6 @@
  *  - Ettus Research UHD libusb1_zero_copy.cpp: https://github.com/EttusResearch/uhd/blob/master/host/lib/transport/libusb1_zero_copy.cpp
  */
 
-using namespace std;
 
 #include <errno.h>
 #include <stdio.h>
@@ -42,6 +41,7 @@ using namespace std;
 #include "usb_device_internals.h"
 #include "logging.h"
 
+using namespace std;
 
 typedef struct streaming streaming_t;
 
@@ -98,7 +98,7 @@ streaming_t *streaming_open_sync(usb_device_t *usb_device)
   t->callback_context = 0;
   t->frames = 0;
   t->transfers = 0;
-  atomic_init(&t->active_transfers, 0);
+  t->active_transfers = 0;
 
   ret_val = t;
   return ret_val;
@@ -181,7 +181,7 @@ streaming_t *streaming_open_async(usb_device_t *usb_device, uint32_t frame_size,
                               t, BULK_XFER_TIMEOUT);
   }
   t->transfers = transfers;
-  atomic_init(&t->active_transfers, 0);
+  t->active_transfers = 0;
 
   ret_val = t;
   return ret_val;
@@ -241,7 +241,7 @@ int streaming_start(streaming_t *t)
   }
 
   /* submit all the transfers */
-  atomic_init(&t->active_transfers, 0);
+  t->active_transfers = 0;
   for (uint32_t i = 0; i < t->num_frames; ++i) {
     int ret = libusb_submit_transfer(t->transfers[i]);
     if (ret < 0) {
@@ -249,7 +249,7 @@ int streaming_start(streaming_t *t)
       t->status = STREAMING_STATUS_FAILED;
       return -1;
     }
-    atomic_fetch_add(&t->active_transfers, 1);
+    t->active_transfers.fetch_add(1);
   }
 
   t->status = STREAMING_STATUS_STREAMING;
@@ -382,7 +382,7 @@ static void LIBUSB_CALL streaming_read_async_callback(struct libusb_transfer *tr
       break;
     case LIBUSB_TRANSFER_CANCELLED:
       /* librtlsdr does also ignore LIBUSB_TRANSFER_CANCELLED */
-      atomic_fetch_sub(&t->active_transfers, 1);
+      t->active_transfers.fetch_sub(1);
       return;
     case LIBUSB_TRANSFER_ERROR:
     case LIBUSB_TRANSFER_TIMED_OUT:
@@ -394,7 +394,7 @@ static void LIBUSB_CALL streaming_read_async_callback(struct libusb_transfer *tr
   }
 
   t->status = STREAMING_STATUS_FAILED;
-  atomic_fetch_sub(&t->active_transfers, 1);
+  t->active_transfers.fetch_sub(1);
 
   /* cancel all the active transfers */
   for (uint32_t i = 0; i < t->num_frames; ++i) {

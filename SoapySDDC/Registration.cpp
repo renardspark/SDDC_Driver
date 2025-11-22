@@ -7,7 +7,7 @@ using namespace std;
 
 #define TAG "SoapySDDC_Registration"
 
-SoapySDR::KwargsList findSDDC(const SoapySDR::Kwargs &args)
+SoapySDR::KwargsList findSDDC(const SoapySDR::Kwargs&)
 {
     TracePrintln(TAG, "");
 

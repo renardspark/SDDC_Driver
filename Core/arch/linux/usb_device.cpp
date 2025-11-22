@@ -24,8 +24,6 @@
  *    example: cyusb_linux_1.0.5/src/download_fx3.cpp
  */
 
-using namespace std;
-
 #include <errno.h>
 #include <stdio.h>
 #include <stdint.h>
@@ -44,6 +42,8 @@ using namespace std;
 #include "ezusb.h"
 #include "logging.h"
 #include "../../config.h"
+
+using namespace std;
 
 const char TAG[] = "usb_device";
 
