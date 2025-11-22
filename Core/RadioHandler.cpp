@@ -97,9 +97,9 @@ RadioHandler::RadioHandler():
 	stateFineTune = new shift_limited_unroll_C_sse_data_t();
 }
 
-sddc_err_t RadioHandler::Init(uint8_t dev_index)
+sddc_err_t RadioHandler::Init(SDDC::DeviceItem dev_index)
 {
-	TracePrintln(TAG, "%d", dev_index);
+	TracePrintln(TAG, "*");
 
 	if(!fx3->Open(dev_index))
 	{
@@ -466,7 +466,7 @@ float RadioHandler::GetIFGain()
 }
 sddc_err_t RadioHandler::SetIFGain(float new_gain)
 {
-	TracePrintln(TAG, "%f, %d", new_gain);
+	TracePrintln(TAG, "%f", new_gain);
 
 	sddc_rf_mode_t mode = hardware->GetRFMode();
 

@@ -28,6 +28,9 @@
 
 typedef struct USBDeviceInfo {
   uint8_t index;
+  uint16_t usb_vendor_id;
+  uint16_t usb_product_id;
+  bool need_firmware;
   std::string manufacturer;
   std::string product;
   std::string serial_number;
@@ -42,7 +45,7 @@ void usb_device_destroy();
 
 std::vector<USBDeviceInfo> usb_device_get_device_list();
 
-usb_device_t *usb_device_open(int index, const char* image,
+usb_device_t *usb_device_open(USBDeviceInfo dev_select, const char* image,
                               uint32_t size);
 
 int usb_device_handle_events(usb_device_t *t);

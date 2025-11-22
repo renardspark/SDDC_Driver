@@ -155,8 +155,9 @@ TEST_CASE(CoreFixture, BasicTest)
 
 TEST_CASE(CoreFixture, R2IQTest)
 {
+    vector<SDDC::DeviceItem> devices = RadioHandler::GetDeviceList();
     auto radio = new RadioHandler();
-    radio->Init(0);
+    radio->Init(devices[0]);
 
     radio->AttachIQ(Callback);
 
@@ -179,8 +180,9 @@ TEST_CASE(CoreFixture, R2IQTest)
 
 TEST_CASE(CoreFixture, TuneTest)
 {
+    vector<SDDC::DeviceItem> devices = RadioHandler::GetDeviceList();
     auto radio = new RadioHandler();
-    radio->Init(0);
+    radio->Init(devices[0]);
 
     radio->AttachIQ(Callback);
 

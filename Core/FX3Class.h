@@ -24,7 +24,7 @@ class fx3class
 {
 public:
 	virtual ~fx3class(void) {}
-	virtual bool Open(uint8_t dev_index) = 0;
+	virtual bool Open(SDDC::DeviceItem) = 0;
 	virtual bool Control(FX3Command command, uint8_t data = 0) = 0;
 	virtual bool Control(FX3Command command, uint32_t data) = 0;
 	virtual bool Control(FX3Command command, uint64_t data) = 0;

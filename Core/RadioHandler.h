@@ -54,7 +54,7 @@ class RadioHandler {
 public:
 	RadioHandler();
 	~RadioHandler();
-	sddc_err_t Init(uint8_t dev_index);
+	sddc_err_t Init(SDDC::DeviceItem dev_index);
 	sddc_err_t AttachReal(void (*callback)(void* context, const int16_t*, uint32_t), void* context = nullptr);
 	sddc_err_t AttachIQ(void (*callback)(void* context, const sddc_complex_t*, uint32_t), void* context = nullptr);
 	sddc_err_t Start(bool convert_r2iq);

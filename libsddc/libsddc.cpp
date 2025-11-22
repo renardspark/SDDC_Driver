@@ -63,9 +63,10 @@ libsddc_handler_t sddc_create()
 
 sddc_err_t sddc_init(libsddc_handler_t t, uint8_t dev_index)
 {
+	vector<SDDC::DeviceItem> devices = RadioHandler::GetDeviceList();
 	t->radio_handler = new RadioHandler();
 
-	sddc_err_t ret = t->radio_handler->Init(dev_index);
+	sddc_err_t ret = t->radio_handler->Init(devices[dev_index]);
 	if(ret != ERR_SUCCESS) return ret;
 
 	ret = t->radio_handler->AttachIQ(Callback, t);

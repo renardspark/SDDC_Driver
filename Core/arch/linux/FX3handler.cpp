@@ -38,11 +38,23 @@ fx3handler::~fx3handler()
     usb_device_destroy();
 }
 
-bool fx3handler::Open(uint8_t dev_index)
+bool fx3handler::Open(SDDC::DeviceItem dev_selector)
 {
-    TracePrintln(TAG, "%d", dev_index);
-    dev = usb_device_open(dev_index, firmware_data, firmware_size);
-    DebugPrintln(TAG, "Open device with dev_index=%d, dev=%p", dev_index, dev);
+    TracePrintln(TAG, "*");
+
+    if (usb_device_infos.size() == 0) {
+        usb_device_infos = usb_device_get_device_list();
+    }
+
+    if(dev_selector.index >= usb_device_infos.size())
+    {
+        ErrorPrintln(TAG, "The device request isn't part of the list");
+        return false;
+    }
+
+
+    dev = usb_device_open(usb_device_infos[dev_selector.index], firmware_data, firmware_size);
+    DebugPrintln(TAG, "Open device with dev_index=%d", dev_selector.index);
 
     usleep(5000);
     Control(STOPFX3, (uint8_t)0);
@@ -200,12 +212,12 @@ vector<SDDC::DeviceItem> fx3handler::GetDeviceList()
 
     vector<SDDC::DeviceItem> dev_list;
 
-    vector<USBDeviceInfo> usb_dev_list = usb_device_get_device_list();
+    usb_device_infos = usb_device_get_device_list();
 
-    for(auto it = usb_dev_list.begin(); it < usb_dev_list.end(); it++)
+    for(auto it = usb_device_infos.begin(); it < usb_device_infos.end(); it++)
     {
         SDDC::DeviceItem dev = {
-            .index = it - usb_dev_list.begin(),
+            .index = it->index,
             .product = it->product,
             .serial_number = it->serial_number
         };

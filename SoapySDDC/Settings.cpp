@@ -45,9 +45,11 @@ SoapySDDC::SoapySDDC(uint8_t dev_index): deviceId(dev_index),
                                         numBuffers(16)
 {
     TracePrintln(TAG, "%d", dev_index);
+    vector<SDDC::DeviceItem> devices = RadioHandler::GetDeviceList();
     radio_handler = new RadioHandler();
-    radio_handler->Init(dev_index);
+    radio_handler->Init(devices[dev_index]);
     radio_handler->AttachIQ(_Callback, this);
+    radio_handler->SetDecimation(0);
 }
 
 SoapySDDC::~SoapySDDC(void)

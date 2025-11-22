@@ -48,7 +48,7 @@ using namespace std;
 typedef struct usb_device usb_device_t;
 
 /* internal functions */
-static libusb_device_handle *find_usb_device(int index, libusb_context *ctx,
+static libusb_device_handle *find_usb_device(USBDeviceInfo,
                              libusb_device **device, int *needs_firmware);
 static int load_image(libusb_device_handle *dev_handle,
                       const char *image, uint32_t size);
@@ -139,6 +139,9 @@ vector<USBDeviceInfo> usb_device_get_device_list()
 
       USBDeviceInfo dev_info;
       dev_info.index = count;
+      dev_info.usb_vendor_id  = desc.idVendor;
+      dev_info.usb_product_id = desc.idProduct;
+      dev_info.need_firmware  = usb_device_ids[i].needs_firmware;
 
       libusb_device_handle *dev_handle = 0;
       ret = libusb_open(device, &dev_handle);
@@ -199,7 +202,7 @@ FAIL2:
 }
 
 
-usb_device_t *usb_device_open(int index, const char* image,
+usb_device_t *usb_device_open(USBDeviceInfo index, const char* image,
                               uint32_t size)
 {
   usb_device_t *ret_val = 0;
@@ -209,7 +212,7 @@ usb_device_t *usb_device_open(int index, const char* image,
 
   libusb_device *device;
   int needs_firmware = 0;
-  libusb_device_handle *dev_handle = find_usb_device(index, ctx, &device, &needs_firmware);
+  libusb_device_handle *dev_handle = find_usb_device(index, &device, &needs_firmware);
   if (dev_handle == 0) {
     return 0;
   }
@@ -229,7 +232,7 @@ usb_device_t *usb_device_open(int index, const char* image,
     usleep(500 * 1000L);
 
     needs_firmware = 0;
-    dev_handle = find_usb_device(index, ctx, &device, &needs_firmware);
+    dev_handle = find_usb_device(index, &device, &needs_firmware);
     if (dev_handle == 0) {
       return 0;
     }
@@ -346,7 +349,7 @@ int usb_device_control(usb_device_t *t, uint8_t request, uint16_t value,
 
 
 /* internal functions */
-static libusb_device_handle *find_usb_device(int index, libusb_context *ctx,
+static libusb_device_handle *find_usb_device(USBDeviceInfo dev_select,
                              libusb_device **device, int *needs_firmware)
 {
   libusb_device_handle *ret_val = 0;
@@ -355,7 +358,7 @@ static libusb_device_handle *find_usb_device(int index, libusb_context *ctx,
   *needs_firmware = 0;
 
   libusb_device **list = 0;
-  ssize_t nusbdevices = libusb_get_device_list(ctx, &list);
+  ssize_t nusbdevices = libusb_get_device_list(NULL, &list);
   if (nusbdevices < 0) {
     log_usb_error(nusbdevices, __func__, __FILE__, __LINE__);
     return (libusb_device_handle *)0;
@@ -368,15 +371,18 @@ static libusb_device_handle *find_usb_device(int index, libusb_context *ctx,
     libusb_get_device_descriptor(dev, &desc);
     for (int i = 0; i < n_usb_device_ids; ++i) {
       if (desc.idVendor == usb_device_ids[i].vid &&
-          desc.idProduct == usb_device_ids[i].pid) {
-        if (count == index) {
+        desc.idProduct == usb_device_ids[i].pid)
+      {
+        if (count == dev_select.index) {
           *device = dev;
           *needs_firmware = usb_device_ids[i].needs_firmware;
+          goto EXIT_FIND_LOOP;
         }
         count++;
       }
     }
   }
+EXIT_FIND_LOOP:
 
   libusb_free_device_list(list, 1);
 

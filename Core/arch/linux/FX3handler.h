@@ -19,7 +19,7 @@ class fx3handler : public fx3class
 public:
 	fx3handler();
 	virtual ~fx3handler(void);
-	bool Open(uint8_t dev_index) override;
+	bool Open(SDDC::DeviceItem) override;
 	bool Control(FX3Command command, uint8_t data) override;
 	bool Control(FX3Command command, uint32_t data) override;
 	bool Control(FX3Command command, uint64_t data) override;
