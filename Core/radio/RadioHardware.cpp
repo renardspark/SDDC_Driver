@@ -21,19 +21,22 @@
 #include "RadioHardware.h"
 #include <cstdio>
 
-const char TAG[] = "RadioHardware";
+#define TAG "RadioHardware"
 
 sddc_rf_mode_t RadioHardware::GetRFMode()
 {
+    TracePrintln(TAG, "");
     return currentRFMode;
 }
 
 uint32_t RadioHardware::GetADCSampleRate()
 {
+    TracePrintln(TAG, "");
     return sampleRate;
 }
 sddc_err_t RadioHardware::SetADCSampleRate(uint32_t adc_rate)
 {
+    TracePrintln(TAG, "%d", adc_rate);
     const array<float, 2> limits = GetADCSampleRateLimits();
     if(adc_rate < limits[0]) adc_rate = limits[0];
     if(adc_rate > limits[1]) adc_rate = limits[1];
@@ -44,28 +47,35 @@ sddc_err_t RadioHardware::SetADCSampleRate(uint32_t adc_rate)
 // --- Gain --- //
 uint16_t RadioHardware::GetRF_HF()
 {
+    TracePrintln(TAG, "");
     return attenuationHFStep;
 }
 uint16_t RadioHardware::GetRF_VHF()
 {
+    TracePrintln(TAG, "");
     return attenuationVHFStep;
 }
 uint16_t RadioHardware::GetIF_HF()
 {
+    TracePrintln(TAG, "");
     return gainHFStep;
 }
 uint16_t RadioHardware::GetIF_VHF()
 {
+    TracePrintln(TAG, "");
     return gainVHFStep;
 }
 
 // --- Misc --- //
 bool RadioHardware::GetDither()
 {
+    TracePrintln(TAG, "");
     return stateDither;
 }
 sddc_err_t RadioHardware::SetDither(bool new_state)
 {
+    TracePrintln(TAG, "%s", new_state ? "on" : "off");
+
     stateDither = new_state;
     if (stateDither)
         return SetGPIO(DITH);
@@ -75,10 +85,13 @@ sddc_err_t RadioHardware::SetDither(bool new_state)
 
 bool RadioHardware::GetPGA()
 {
+    TracePrintln(TAG, "");
     return statePGA;
 }
 sddc_err_t RadioHardware::SetPGA(bool new_state)
 {
+    TracePrintln(TAG, "%s", new_state ? "on" : "off");
+
     statePGA = new_state;
     if (statePGA)
         return SetGPIO(PGA_EN);
@@ -88,10 +101,13 @@ sddc_err_t RadioHardware::SetPGA(bool new_state)
 
 bool RadioHardware::GetRand()
 {
+    TracePrintln(TAG, "");
     return stateRand;
 }
 sddc_err_t RadioHardware::SetRand(bool new_state)
 {
+    TracePrintln(TAG, "%s", new_state ? "on" : "off");
+
     stateRand = new_state;
     if (stateRand)
         return SetGPIO(RANDO);
@@ -102,10 +118,13 @@ sddc_err_t RadioHardware::SetRand(bool new_state)
 // ----- Bias T ----- //
 bool RadioHardware::GetBiasT_HF()
 {
+    TracePrintln(TAG, "");
     return stateBiasT_HF;
 }
 sddc_err_t RadioHardware::SetBiasT_HF(bool new_state) 
 {
+    TracePrintln(TAG, "%s", new_state ? "on" : "off");
+
     stateBiasT_HF = new_state;
 
     if (stateBiasT_HF)
@@ -116,10 +135,12 @@ sddc_err_t RadioHardware::SetBiasT_HF(bool new_state)
 
 bool RadioHardware::GetBiasT_VHF()
 {
+    TracePrintln(TAG, "");
     return stateBiasT_VHF;
 }
 sddc_err_t RadioHardware::SetBiasT_VHF(bool new_state)
 {
+    TracePrintln(TAG, "%s", new_state ? "on" : "off");
     stateBiasT_VHF = new_state;
     if (stateBiasT_VHF)
         return SetGPIO(BIAS_VHF);
@@ -131,25 +152,29 @@ sddc_err_t RadioHardware::SetBiasT_VHF(bool new_state)
 // ----- Tuner ----- //
 uint32_t RadioHardware::GetCenterFrequency_HF()
 {
+    TracePrintln(TAG, "");
     return freqLO_HF;
 }
 uint32_t RadioHardware::GetCenterFrequency_VHF()
 {
+    TracePrintln(TAG, "");
     return freqLO_VHF;
 }
 
 // ----- GPIOs ----- //
 sddc_err_t RadioHardware::SetGPIO(uint32_t mask)
 {
-    gpios |= mask;
+    TracePrintln(TAG, "%04X", mask);
 
+    gpios |= mask;
     return Fx3->Control(GPIOFX3, gpios) ? ERR_SUCCESS : ERR_FX3_TRANSFER_FAILED;
 }
 
 sddc_err_t RadioHardware::UnsetGPIO(uint32_t mask)
 {
-    gpios &= ~mask;
+    TracePrintln(TAG, "%04X", mask);
 
+    gpios &= ~mask;
     return Fx3->Control(GPIOFX3, gpios) ? ERR_SUCCESS : ERR_FX3_TRANSFER_FAILED;
 }
 
@@ -161,6 +186,7 @@ sddc_err_t RadioHardware::UnsetGPIO(uint32_t mask)
  */
 sddc_err_t RadioHardware::SetLED(sddc_leds_t led, bool on)
 {
+    TracePrintln(TAG, "%X, %s", led, on ? "on" : "off");
     int pin;
     switch(led)
     {
@@ -186,6 +212,7 @@ sddc_err_t RadioHardware::SetLED(sddc_leds_t led, bool on)
 
 RadioHardware::~RadioHardware()
 {
+    TracePrintln(TAG, "");
     if (Fx3) {
         SetGPIO(SHDWN);
     }
