@@ -87,33 +87,6 @@ void usb_device_destroy()
   libusb_exit(nullptr);
 }
 
-int usb_device_count_devices()
-{
-  int ret_val = -1;
-
-  libusb_device **list = 0;
-  ssize_t nusbdevices = libusb_get_device_list(0, &list);
-  if (nusbdevices < 0) {
-    log_usb_error(nusbdevices, __func__, __FILE__, __LINE__);
-    return nusbdevices;
-  }
-  int count = 0;
-  for (ssize_t i = 0; i < nusbdevices; ++i) {
-    libusb_device *dev = list[i];
-    struct libusb_device_descriptor desc;
-    int ret = libusb_get_device_descriptor(dev, &desc);
-    for (int i = 0; i < n_usb_device_ids; ++i) {
-      if (desc.idVendor == usb_device_ids[i].vid &&
-          desc.idProduct == usb_device_ids[i].pid) {
-        count++;
-      }
-    }
-  }
-  libusb_free_device_list(list, 1);
-
-  return count;
-}
-
 
 vector<USBDeviceInfo> usb_device_get_device_list()
 {
@@ -315,6 +288,20 @@ int usb_device_handle_events(usb_device_t *t)
   return libusb_handle_events_completed(t->context, &t->completed);
 }
 
+/**
+ * @brief Send a request to the USb device
+ * 
+ * @param[in] t usb_device handle
+ * @param[in] request
+ * @param[in] value
+ * @param[in] index
+ * @param[in] data pointer to a data buffer
+ * @param[in] length length of the data buffer
+ * @param[in] read Read request if true, write request otherwise
+ * 
+ * \retval 0
+ * \retval -1
+ */
 int usb_device_control(usb_device_t *t, uint8_t request, uint16_t value,
                        uint16_t index, uint8_t *data, uint16_t length, bool read) {
 
@@ -354,8 +341,6 @@ int usb_device_control(usb_device_t *t, uint8_t request, uint16_t value,
 static libusb_device_handle *find_usb_device(USBDeviceInfo dev_select,
                              libusb_device **device, int *needs_firmware)
 {
-  libusb_device_handle *ret_val = 0;
-
   *device = 0;
   *needs_firmware = 0;
 

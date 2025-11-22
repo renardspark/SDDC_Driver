@@ -65,9 +65,8 @@ class fx3handler : public fx3class
         emuthread = std::thread([&input, this]{
             while(run)
             {
-                auto ptr = input.getWritePtr();
-                memset(ptr, 0x5A, input.getWriteCount());
-                input.WriteDone();
+                vector<int16_t> put(input.getWriteCount(), 0x5A);
+                input.push(put);
                 ++nxfers;
                 std::this_thread::sleep_for(1ms);
             }

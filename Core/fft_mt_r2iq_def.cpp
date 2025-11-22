@@ -44,7 +44,6 @@ void * fft_mt_r2iq::r2iqThreadf_def(r2iqThreadArg *th)
 
         // --- Hot-changeable settings --- //
         const int _center_frequency_bin = this->center_frequency_bin;
-        const bool lsb = this->getSideband();
 
         {
             std::unique_lock<std::mutex> lk(mutexR2iqControl);
@@ -201,7 +200,7 @@ void * fft_mt_r2iq::r2iqThreadf_def(r2iqThreadArg *th)
 
             size_t len = (k+1) * fft_useful_size + output_buffer_offset > 32768 ? 32768 - (k * fft_useful_size + output_buffer_offset) : fft_useful_size;
 
-            if (lsb) // lower sideband
+            if (this->getSideband()) // lower sideband
             {
                 // mirror just by negating the imaginary Q of complex I/Q
                 copy<true>((fftwf_complex*)&iq_output.data()[(k * fft_useful_size + output_buffer_offset)*2], &th->inFreqTmp[0], len);

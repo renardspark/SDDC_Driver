@@ -157,6 +157,11 @@ int main(int argc, char **argv)
     goto DONE;
   }
 
+  if (sddc_set_decimation(sddc, 0) < 0) {
+    fprintf(stderr, "ERROR - sddc_set_rf_mode() failed\n");
+    goto DONE;
+  }
+
   if (sddc_set_center_frequency(sddc, vhf_frequency) < 0) {
     fprintf(stderr, "ERROR - sddc_set_vhf_frequency() failed\n");
     goto DONE;

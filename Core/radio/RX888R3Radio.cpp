@@ -214,7 +214,7 @@ vector<float> RX888R3Radio::GetIFSteps_VHF()
 
 sddc_err_t RX888R3Radio::SetIFGain_HF(size_t gain_index)
 {
-    TracePrintln(TAG, "%d", gain_index);
+    TracePrintln(TAG, "%ld", gain_index);
 
     uint8_t gain;
     if (gain_index > GAIN_SWEET_POINT)
