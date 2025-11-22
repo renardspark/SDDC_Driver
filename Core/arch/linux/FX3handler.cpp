@@ -25,6 +25,8 @@ fx3handler::fx3handler()
 {
     TracePrintln(TAG, "");
 
+    usb_device_init();
+
     dev = nullptr;
 }
 
@@ -33,6 +35,7 @@ fx3handler::~fx3handler()
     TracePrintln(TAG, "");
 
     Close();
+    usb_device_destroy();
 }
 
 bool fx3handler::Open(uint8_t dev_index)
@@ -111,7 +114,7 @@ void fx3handler::StartStream(ringbuffer<int16_t> &samples_buf)
     DebugPrintln(TAG, "Samples buffer blocksize: %d", samples_buf.getBlockSize());
 
     // Start background thread to poll the events
-    run = true;
+    streamRunning = true;
     if (stream)
     {
         streaming_start(stream);
@@ -120,7 +123,7 @@ void fx3handler::StartStream(ringbuffer<int16_t> &samples_buf)
     poll_thread = std::thread(
         [this]()
         {
-            while (run)
+            while (streamRunning)
             {
                 usb_device_handle_events(this->dev);
             }
@@ -132,7 +135,7 @@ void fx3handler::StopStream()
 {
     TracePrintln(TAG, "");
 
-    run = false;
+    streamRunning = false;
     poll_thread.join();
 
     streaming_stop(stream);
@@ -157,22 +160,15 @@ bool fx3handler::ReadDebugTrace(uint8_t *pdata, uint8_t len)
     return usb_device_control(this->dev, READINFODEBUG, pdata[0], 0, (uint8_t *)pdata, len, 1) == 0;
 }
 
-
-
-sddc_err_t fx3handler::SearchDevices()
-{
-    TracePrintln(TAG, "");
-
-    usb_device_infos = usb_device_get_device_list();
-
-    return ERR_SUCCESS;
-}
-
 size_t fx3handler::GetDeviceListLength()
 {
     TracePrintln(TAG, "");
 
-    return usb_device_count_devices();
+    if (usb_device_infos.size() == 0) {
+        usb_device_infos = usb_device_get_device_list();
+    }
+
+    return usb_device_infos.size();
 }
 
 bool fx3handler::GetDevice(
@@ -184,11 +180,11 @@ bool fx3handler::GetDevice(
 {
     TracePrintln(TAG, "%d, %p, %ld, %p, %ld", idx, name, name_len, serial, serial_len);
 
-    if (idx >= usb_device_count_devices()) return false;
-
     if (usb_device_infos.size() == 0) {
-        SearchDevices();
+        usb_device_infos = usb_device_get_device_list();
     }
+
+    if (idx >= usb_device_infos.size()) return false;
 
     auto dev = usb_device_infos[idx];
 

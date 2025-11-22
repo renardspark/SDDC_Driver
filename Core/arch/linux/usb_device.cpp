@@ -37,6 +37,7 @@ using namespace std;
 #include <fcntl.h>
 #include <libusb.h>
 #include <stdexcept>
+#include <format>
 
 #include "usb_device.h"
 #include "usb_device_internals.h"
@@ -51,7 +52,6 @@ static libusb_device_handle *find_usb_device(int index, libusb_context *ctx,
                              libusb_device **device, int *needs_firmware);
 static int load_image(libusb_device_handle *dev_handle,
                       const char *image, uint32_t size);
-static int validate_image(const uint8_t *image, const size_t size);
 static int list_endpoints(struct libusb_endpoint_descriptor endpoints[],
                           struct libusb_ss_endpoint_companion_descriptor ss_endpoints[],
                           libusb_device *device);
@@ -71,27 +71,34 @@ static struct usb_device_id usb_device_ids[] = {
 static int n_usb_device_ids = sizeof(usb_device_ids) / sizeof(usb_device_ids[0]);
 
 
+void usb_device_init()
+{
+  int ret = libusb_init(nullptr);
+  if(ret < 0) {
+    printf("%d %d\n", ret, ret < 0);
+    throw runtime_error(format("{} ({}:{}) ", __FUNCTION__, __FILE__, __LINE__) + libusb_error_name(ret) + " " + libusb_strerror(ret));
+  }
+}
+void usb_device_destroy()
+{
+  libusb_exit(nullptr);
+}
+
 int usb_device_count_devices()
 {
   int ret_val = -1;
 
-  int ret = libusb_init(0);
-  if (ret < 0) {
-    log_usb_error(ret, __func__, __FILE__, __LINE__);
-    return ret;
-  }
   libusb_device **list = 0;
   ssize_t nusbdevices = libusb_get_device_list(0, &list);
   if (nusbdevices < 0) {
     log_usb_error(nusbdevices, __func__, __FILE__, __LINE__);
-    libusb_exit(0);
     return nusbdevices;
   }
   int count = 0;
   for (ssize_t i = 0; i < nusbdevices; ++i) {
     libusb_device *dev = list[i];
     struct libusb_device_descriptor desc;
-    ret = libusb_get_device_descriptor(dev, &desc);
+    int ret = libusb_get_device_descriptor(dev, &desc);
     for (int i = 0; i < n_usb_device_ids; ++i) {
       if (desc.idVendor == usb_device_ids[i].vid &&
           desc.idProduct == usb_device_ids[i].pid) {
@@ -111,17 +118,10 @@ vector<USBDeviceInfo> usb_device_get_device_list()
   char temporary_string[MAX_STRING_BYTES];
   int ret_val = -1;
 
-  int ret = libusb_init(0);
-  if (ret < 0) {
-    log_usb_error(ret, __func__, __FILE__, __LINE__);
-    throw runtime_error("error");
-  }
-
   libusb_device **list = 0;
   ssize_t nusbdevices = libusb_get_device_list(0, &list);
   if (nusbdevices < 0) {
     log_usb_error(nusbdevices, __func__, __FILE__, __LINE__);
-    libusb_exit(0);
     throw runtime_error("error");
   }
 
@@ -130,7 +130,7 @@ vector<USBDeviceInfo> usb_device_get_device_list()
   for (ssize_t j = 0; j < nusbdevices; ++j) {
     libusb_device *device = list[j];
     struct libusb_device_descriptor desc;
-    ret = libusb_get_device_descriptor(device, &desc);
+    int ret = libusb_get_device_descriptor(device, &desc);
     for (int i = 0; i < n_usb_device_ids; ++i) {
       if (!(desc.idVendor == usb_device_ids[i].vid &&
             desc.idProduct == usb_device_ids[i].pid)) {
@@ -138,6 +138,7 @@ vector<USBDeviceInfo> usb_device_get_device_list()
       }
 
       USBDeviceInfo dev_info;
+      dev_info.index = count;
 
       libusb_device_handle *dev_handle = 0;
       ret = libusb_open(device, &dev_handle);
@@ -191,10 +192,10 @@ FAIL3:
 
   ret_val = count;
 
-  return device_infos;
-
 FAIL2:
   libusb_free_device_list(list, 1);
+
+  return device_infos;
 }
 
 
@@ -204,24 +205,17 @@ usb_device_t *usb_device_open(int index, const char* image,
   usb_device_t *ret_val = 0;
   libusb_context *ctx = 0;
 
-  int ret = libusb_init(&ctx);
-  if (ret < 0) {
-    log_usb_error(ret, __func__, __FILE__, __LINE__);
-    return ret_val;
-  }
-
   //libusb_set_option(ctx, LIBUSB_OPTION_LOG_LEVEL, LIBUSB_LOG_LEVEL_DEBUG);
 
   libusb_device *device;
   int needs_firmware = 0;
   libusb_device_handle *dev_handle = find_usb_device(index, ctx, &device, &needs_firmware);
   if (dev_handle == 0) {
-    libusb_exit(0);
     return 0;
   }
 
   if (needs_firmware) {
-    ret = load_image(dev_handle, image, size);
+    int ret = load_image(dev_handle, image, size);
     if (ret != 0) {
       log_error("load_image() failed", __func__, __FILE__, __LINE__);
       libusb_close(dev_handle);
@@ -237,7 +231,6 @@ usb_device_t *usb_device_open(int index, const char* image,
     needs_firmware = 0;
     dev_handle = find_usb_device(index, ctx, &device, &needs_firmware);
     if (dev_handle == 0) {
-      libusb_exit(0);
       return 0;
     }
     if (needs_firmware) {
@@ -257,7 +250,7 @@ usb_device_t *usb_device_open(int index, const char* image,
   /* list endpoints */
   struct libusb_endpoint_descriptor endpoints[MAX_ENDPOINTS];
   struct libusb_ss_endpoint_companion_descriptor ss_endpoints[MAX_ENDPOINTS];
-  ret = list_endpoints(endpoints, ss_endpoints, device);
+  int ret = list_endpoints(endpoints, ss_endpoints, device);
   if (ret < 0) {
     log_error("list_endpoints() failed", __func__, __FILE__, __LINE__);
     libusb_close(dev_handle);
@@ -308,7 +301,6 @@ void usb_device_close(usb_device_t *t)
 {
   libusb_close(t->dev_handle);
   free(t);
-  libusb_exit(0);
   return;
 }
 
@@ -319,7 +311,7 @@ int usb_device_handle_events(usb_device_t *t)
 }
 
 int usb_device_control(usb_device_t *t, uint8_t request, uint16_t value,
-                       uint16_t index, uint8_t *data, uint16_t length, int read) {
+                       uint16_t index, uint8_t *data, uint16_t length, bool read) {
 
   const uint8_t bmWriteRequestType = LIBUSB_ENDPOINT_OUT | LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_RECIPIENT_DEVICE;
   const uint8_t bmReadRequestType = LIBUSB_ENDPOINT_IN | LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_RECIPIENT_DEVICE;
@@ -535,6 +527,8 @@ static int list_endpoints(struct libusb_endpoint_descriptor endpoints[],
       }
     }
   }
+
+  libusb_free_config_descriptor(config);
 
   return count;
 }

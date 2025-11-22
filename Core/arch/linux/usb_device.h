@@ -27,6 +27,7 @@
 #include <string>
 
 typedef struct USBDeviceInfo {
+  uint8_t index;
   std::string manufacturer;
   std::string product;
   std::string serial_number;
@@ -35,7 +36,9 @@ typedef struct USBDeviceInfo {
 
 typedef struct usb_device usb_device_t;
 
-int usb_device_count_devices();
+void usb_device_init();
+void usb_device_destroy();
+
 
 std::vector<USBDeviceInfo> usb_device_get_device_list();
 
@@ -47,6 +50,6 @@ int usb_device_handle_events(usb_device_t *t);
 void usb_device_close(usb_device_t *t);
 
 int usb_device_control(usb_device_t *t, uint8_t request, uint16_t value,
-                       uint16_t index, uint8_t *data, uint16_t length, int read);
+                       uint16_t index, uint8_t *data, uint16_t length, bool read);
 
 #endif /* __USB_DEVICE_H */

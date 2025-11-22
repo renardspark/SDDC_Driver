@@ -33,12 +33,7 @@ public:
 	vector<SDDC::DeviceItem> GetDeviceList() override;
 
 private:
-	bool ReadUsb(uint8_t command, uint16_t value, uint16_t index, uint8_t *data, size_t size);
-	bool WriteUsb(uint8_t command, uint16_t value, uint16_t index, uint8_t *data, size_t size);
-
 	bool Close(void);
-
-	sddc_err_t SearchDevices();
 
 	static void PacketRead(uint32_t data_size, uint8_t *data, void *context);
 
@@ -46,7 +41,7 @@ private:
 	usb_device_t *dev;
 	streaming_t *stream;
 	ringbuffer<int16_t> *inputbuffer;
-    bool run;
+    bool streamRunning = false;
     std::thread poll_thread;
 };
 
