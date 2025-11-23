@@ -46,6 +46,7 @@ extern void usleep(__int64 usec);
 #include "usb_device.h"
 #include "usb_device_internals.h"
 #include "logging.h"
+#include "../../config.h"
 
 using namespace std;
 
@@ -150,6 +151,8 @@ streaming_t *streaming_open_async(usb_device_t *usb_device, uint32_t frame_size,
     frames[i] = libusb_dev_mem_alloc(usb_device->dev_handle, frame_size);
     #elif defined(__APPLE__)
     frames[i] = (uint8_t *) malloc(frame_size);
+    #else
+    frames[i] = (uint8_t *) malloc(frame_size);
     #endif
 
     if (frames[i] == 0) {
@@ -159,6 +162,8 @@ streaming_t *streaming_open_async(usb_device_t *usb_device, uint32_t frame_size,
         libusb_dev_mem_free(usb_device->dev_handle, frames[j], frame_size);
         #elif defined(__APPLE__)
         free(frames[j]);
+        #else
+        free(frames[i]);
         #endif
       }
       return ret_val;
@@ -208,6 +213,8 @@ void streaming_close(streaming_t *t)
       libusb_dev_mem_free(t->usb_device->dev_handle, t->frames[i],
                           t->frame_size);
       #elif defined(__APPLE__)
+      free(t->frames[i]);
+      #else
       free(t->frames[i]);
       #endif
     }

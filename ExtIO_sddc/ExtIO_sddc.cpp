@@ -204,13 +204,18 @@ bool __declspec(dllexport) __stdcall InitHW(char *name, char *model, int& type)
 		unsigned char idx = 0;
 		int selected = 0;
 		vector<SDDC::DeviceItem> device_list = RadioHandler::GetDeviceList();
+		for(int i = 0; i < device_list.size(); i++)
+		{
+			strncpy(devicelist.dev[i], device_list[i].product.c_str(), MAXDEVSTRLEN);
+		}
+		devicelist.numdev = device_list.size();
 		if (device_list.size() >= 1){	
-			selected = DialogBoxParam(hInst, MAKEINTRESOURCE(IDD_SELECTDEVICE), NULL, DlgSelectDevice, (LPARAM) &device_list);
+			selected = DialogBoxParam(hInst, MAKEINTRESOURCE(IDD_SELECTDEVICE), NULL, DlgSelectDevice, (LPARAM) &devicelist);
 		}
 		DebugPrintln(TAG, "selected %d", selected);
 		idx = selected;
 
-		gbInitHW = radio.Init(device_list[idx]); // Check if it there hardware
+		gbInitHW = radio.Init(device_list[idx]) == ERR_SUCCESS; // Check if it there hardware
 		radio.AttachIQ(Callback);
 	
 #ifdef _DEBUG
