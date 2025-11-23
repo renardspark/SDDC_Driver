@@ -37,11 +37,11 @@
 //#define VERBOSE_TRACEEXTREME
 
 // macro to call callback function with just status extHWstatusT
-#define EXTIO_STATUS_CHANGE( CB, STATUS )   \
+#define EXTIO_STATUS_CHANGE(TAG, CB, STATUS)   \
 	do { \
 	  SendMessage(h_dialog, WM_USER + 1, STATUS, 0); \
 	  if (CB) { \
-		  DbgPrintf("<==CALLBACK: %s\n", #STATUS); \
+		  DebugPrintln(TAG, "<==CALLBACK: %s", #STATUS); \
 		  CB( -1, STATUS, 0, NULL );\
 	  }\
 	}while(0)

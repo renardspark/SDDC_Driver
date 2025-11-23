@@ -93,7 +93,6 @@ void usb_device_init()
 {
   int ret = libusb_init(nullptr);
   if(ret < 0) {
-    printf("%d %d\n", ret, ret < 0);
     throw runtime_error(format("{} ({}:{}) ", __FUNCTION__, __FILE__, __LINE__) + libusb_error_name(ret) + " " + libusb_strerror(ret));
   }
 }
