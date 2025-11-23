@@ -49,13 +49,16 @@ target_include_directories(SDDC_CORE PUBLIC "${LIBFFTW_INCLUDE_DIRS}")
 target_link_directories(SDDC_CORE PUBLIC "${LIBFFTW_LIBRARY_DIRS}")
 target_link_libraries(SDDC_CORE PUBLIC ${LIBFFTW_LIBRARIES})
 
+target_include_directories(SDDC_CORE PUBLIC "${LIBUSB_INCLUDE_DIRS}")
+target_link_directories(SDDC_CORE PUBLIC "${LIBUSB_LIBRARY_DIRS}")
+target_link_libraries(SDDC_CORE PUBLIC ${LIBUSB_LIBRARIES})
+
 if (NOT USE_SIMD_OPTIMIZATIONS)
    target_compile_definitions(SDDC_CORE PRIVATE NO_SIMD_OPTIM)
 endif()
 
 if(MSVC)
-  target_include_directories(SDDC_CORE PUBLIC "C:/Users/User/Desktop/SDDC_Driver/vcpkg/packages/libusb_x64-windows/include/libusb-1.0")
-  target_link_libraries(SDDC_CORE PUBLIC Setupapi.lib "C:/Users/User/Desktop/SDDC_Driver/vcpkg/packages/libusb_x64-windows/lib/libusb-1.0.lib")
+  target_link_libraries(SDDC_CORE PUBLIC Setupapi.lib)
 else(MSVC)
   target_include_directories(SDDC_CORE PUBLIC "${LIBUSB_INCLUDE_DIRS}")
   target_link_directories(SDDC_CORE PUBLIC "${LIBUSB_LIBRARY_DIRS}")

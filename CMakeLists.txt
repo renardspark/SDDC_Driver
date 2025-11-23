@@ -57,6 +57,21 @@ if (MSVC)
     SET(LIBFFTW_INCLUDE_DIRS ${SOURCE_DIR})
     SET(LIBFFTW_LIBRARY_DIRS ${SOURCE_DIR})
     SET(LIBFFTW_LIBRARIES fftw3f-3)
+
+    ExternalProject_Add(
+        LIBUSB
+        URL "https://github.com/libusb/libusb/releases/download/v1.0.29/libusb-1.0.29.tar.bz2"
+        URL_HASH SHA256=5977fc950f8d1395ccea9bd48c06b3f808fd3c2c961b44b0c2e6e29fc3a70a85
+        BUILD_IN_SOURCE TRUE
+        DOWNLOAD_EXTRACT_TIMESTAMP TRUE
+        CONFIGURE_COMMAND   ""
+        BUILD_COMMAND       ${LIBEXE} /def:./libusb/libusb-1.0.def /MACHINE:${ARCH} /OUT:./libusb/libusb-1.0.lib
+        INSTALL_COMMAND     ""
+    )
+    ExternalProject_Get_Property(LIBUSB SOURCE_DIR)
+    SET(LIBUSB_INCLUDE_DIRS ${SOURCE_DIR}/libusb)
+    SET(LIBUSB_LIBRARY_DIRS ${SOURCE_DIR}/libusb)
+    SET(LIBUSB_LIBRARIES libusb-1.0)
 else()
     if (USE_DEBUG_ASAN)
         set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fsanitize=address")
