@@ -60,17 +60,22 @@ if (MSVC)
 
     ExternalProject_Add(
         LIBUSB
-        URL "https://github.com/libusb/libusb/releases/download/v1.0.29/libusb-1.0.29.tar.bz2"
-        URL_HASH SHA256=5977fc950f8d1395ccea9bd48c06b3f808fd3c2c961b44b0c2e6e29fc3a70a85
+        URL "https://github.com/libusb/libusb/releases/download/v1.0.29/libusb-1.0.29.7z"
+        URL_HASH SHA256=964a38152ca9a104cd00ec8d2f0617b89cd814f9b635e29763c68563d951521d
         BUILD_IN_SOURCE TRUE
-        DOWNLOAD_EXTRACT_TIMESTAMP TRUE
-        CONFIGURE_COMMAND   ""
-        BUILD_COMMAND       ${LIBEXE} /def:./libusb/libusb-1.0.def /MACHINE:${ARCH} /OUT:./libusb/libusb-1.0.lib
+        DOWNLOAD_NO_EXTRACT TRUE
+        CONFIGURE_COMMAND   "c:\\program files\\7-zip\\7z" x -y <DOWNLOADED_FILE>
+        BUILD_COMMAND ""
         INSTALL_COMMAND     ""
     )
+    if(${CMAKE_EXE_LINKER_FLAGS} MATCHES "X86")
+        SET(LIBUSB_ARCH MS32)
+    else()
+        SET(LIBUSB_ARCH MS64)
+    endif()
     ExternalProject_Get_Property(LIBUSB SOURCE_DIR)
-    SET(LIBUSB_INCLUDE_DIRS ${SOURCE_DIR}/libusb)
-    SET(LIBUSB_LIBRARY_DIRS ${SOURCE_DIR}/libusb)
+    SET(LIBUSB_INCLUDE_DIRS ${SOURCE_DIR}/include)
+    SET(LIBUSB_LIBRARY_DIRS ${SOURCE_DIR}/VS2022/${LIBUSB_ARCH}/dll/)
     SET(LIBUSB_LIBRARIES libusb-1.0)
 else()
     if (USE_DEBUG_ASAN)
