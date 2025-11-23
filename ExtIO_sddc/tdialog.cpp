@@ -2,6 +2,7 @@
 #include "framework.h"
 #include "shellapi.h"
 #include "tdialog.h"
+#include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
 #include "RadioHandler.h"
@@ -26,7 +27,7 @@ int  _xfp = 1;
 int  _xfm = 1;
 unsigned int cntime = 0;
 
-extern RadioHandlerClass RadioHandler;
+extern RadioHandler radio;
 extern "C" int SetOverclock(uint32_t adcfreq);
 extern double	gfFreqCorrectionPpm;
 
@@ -37,7 +38,7 @@ void UpdatePPM(HWND hWnd)
 	SetWindowText(GetDlgItem(hWnd, IDC_EDIT2), lbuffer);
 }
 
-void UpdateGain(HWND hControl, int current, const float* gains, int length)
+void UpdateGain(HWND hControl, int current, vector<float> gains, int length)
 {
 	char ebuffer[128];
 
@@ -65,7 +66,7 @@ void UpdateGain(HWND hControl, int current, const float* gains, int length)
 
 bool Support128M()
 {
-	auto model = RadioHandler.getModel();
+	auto model = radio.getHardwareModel();
 
 	return model == RX888 ||
 		model == RX888r2 ||
@@ -75,7 +76,7 @@ bool Support128M()
 
 bool SupportPGA()
 {
-	auto model = RadioHandler.getModel();
+	auto model = radio.getHardwareModel();
 
 	return model == RX888r2 ||
 		model == RX888r3 ||
@@ -128,11 +129,11 @@ INT_PTR CALLBACK DlgMainFn(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 		if (cntime-- <= 0)
 		{
 			cntime = 5;
-			sprintf(lbuffer, "%3.1fMsps",  RadioHandler.getSampleRate() / 1000000.0f);
+			sprintf(lbuffer, "%3.1fMsps",  radio.GetADCSampleRate() / 1000000.0f);
 			SetWindowText(GetDlgItem(hWnd, IDC_STATIC13), lbuffer);
-			sprintf(lbuffer, "%3.1fMsps", RadioHandler.getBps());
+			sprintf(lbuffer, "%3.1fMsps", radio.getRealSamplesPerSecond());
 			SetWindowText(GetDlgItem(hWnd, IDC_STATIC14), lbuffer);
-			sprintf(lbuffer, "%3.1fMsps", RadioHandler.getSpsIF());
+			sprintf(lbuffer, "%3.1fMsps", radio.getIQSamplesPerSecond());
 			SetWindowText(GetDlgItem(hWnd, IDC_STATIC16), lbuffer);
 		}
 
@@ -202,14 +203,15 @@ INT_PTR CALLBACK DlgMainFn(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 			case extHw_Changed_MGC:
 			case extHw_Changed_ATT:
 			case extHw_Changed_RF_IF:
-				const float *gains;
-				int length;
-				length = RadioHandler.GetRFAttSteps(&gains);
-				UpdateGain(GetDlgItem(hWnd, IDC_RFGAIN), GetActualAttIdx(), gains, length);
+			{
+				vector<float> gains;
+				gains = radio.GetRFGainSteps();
+				UpdateGain(GetDlgItem(hWnd, IDC_RFGAIN), GetActualAttIdx(), gains, gains.size());
 
-				length = RadioHandler.GetIFGainSteps(&gains);
-				UpdateGain(GetDlgItem(hWnd, IDC_IFGAIN), ExtIoGetActualMgcIdx(), gains, length);
+				gains = radio.GetIFGainSteps();
+				UpdateGain(GetDlgItem(hWnd, IDC_IFGAIN), ExtIoGetActualMgcIdx(), gains, gains.size());
 				break;
+			}
 
 			case extHw_Changed_SRATES:
 				double rate;
@@ -260,7 +262,7 @@ INT_PTR CALLBACK DlgMainFn(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 			switch (HIWORD(wParam))
 			{
 			case BN_CLICKED:
-				RadioHandler.UptDither(!RadioHandler.GetDither());
+				radio.SetDither(!radio.GetDither());
 				break;
 			}
 			break;
@@ -268,7 +270,7 @@ INT_PTR CALLBACK DlgMainFn(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 			switch (HIWORD(wParam))
 			{
 			case BN_CLICKED:
-				RadioHandler.UptPga(!RadioHandler.GetPga());
+				radio.SetPGA(!radio.GetPGA());
 				break;
 			}
 			break;
@@ -276,7 +278,7 @@ INT_PTR CALLBACK DlgMainFn(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 			switch (HIWORD(wParam))
 			{
 			case BN_CLICKED:
-				RadioHandler.UptRand(!RadioHandler.GetRand());
+				radio.SetRand(!radio.GetRand());
 				break;
 			}
 			break;
@@ -284,7 +286,7 @@ INT_PTR CALLBACK DlgMainFn(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 			switch (HIWORD(wParam))
 			{
 			case BN_CLICKED:
-				RadioHandler.UpdBiasT_HF(!RadioHandler.GetBiasT_HF());
+				radio.SetBiasT_HF(!radio.GetBiasT_HF());
 				break;
 			}
 			break;
@@ -292,7 +294,7 @@ INT_PTR CALLBACK DlgMainFn(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 			switch (HIWORD(wParam))
 			{
 			case BN_CLICKED:
-				RadioHandler.UpdBiasT_VHF(!RadioHandler.GetBiasT_VHF());
+				radio.SetBiasT_VHF(!radio.GetBiasT_VHF());
 				break;
 			}
 			break;
@@ -300,17 +302,16 @@ INT_PTR CALLBACK DlgMainFn(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 			switch (HIWORD(wParam))
 			{
 			case BN_CLICKED:
-				const float *gains;
-				int length;
+				vector<float> gains;
 				int index = GetActualAttIdx();
-				length = RadioHandler.GetRFAttSteps(&gains);
+				gains = radio.GetRFGainSteps();
 
 				index += 1;
 
-				if (index >= 0 && index < length)
+				if (index >= 0 && index < gains.size())
 					SetAttenuator(index);
 
-				UpdateGain(GetDlgItem(hWnd, IDC_RFGAIN), GetActualAttIdx(), gains, length);
+				UpdateGain(GetDlgItem(hWnd, IDC_RFGAIN), GetActualAttIdx(), gains, gains.size());
 				break;
 			}
 			break;
@@ -318,16 +319,15 @@ INT_PTR CALLBACK DlgMainFn(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 			switch (HIWORD(wParam))
 			{
 			case BN_CLICKED:
-				const float *gains;
-				int length;
+				vector<float> gains;
 				int index = GetActualAttIdx();
-				length = RadioHandler.GetRFAttSteps(&gains);
+				gains = radio.GetRFGainSteps();
 
 				index -= 1;
-				if (index >= 0 && index < length)
+				if (index >= 0 && index < gains.size())
 					SetAttenuator(index);
 
-				UpdateGain(GetDlgItem(hWnd, IDC_RFGAIN), GetActualAttIdx(), gains, length);
+				UpdateGain(GetDlgItem(hWnd, IDC_RFGAIN), GetActualAttIdx(), gains, gains.size());
 				break;
 			}
 			break;
@@ -336,16 +336,15 @@ INT_PTR CALLBACK DlgMainFn(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 			switch (HIWORD(wParam))
 			{
 			case BN_CLICKED:
-				const float *gains;
-				int length;
+				vector<float> gains;
 				int index = ExtIoGetActualMgcIdx();
-				length = RadioHandler.GetIFGainSteps(&gains);
+				gains = radio.GetIFGainSteps();
 
 				index += 1;
-				if (index >= 0 && index < length)
+				if (index >= 0 && index < gains.size())
 					ExtIoSetMGC(index);
 
-				UpdateGain(GetDlgItem(hWnd, IDC_IFGAIN), ExtIoGetActualMgcIdx(), gains, length);
+				UpdateGain(GetDlgItem(hWnd, IDC_IFGAIN), ExtIoGetActualMgcIdx(), gains, gains.size());
 				break;
 			}
 			break;
@@ -353,16 +352,15 @@ INT_PTR CALLBACK DlgMainFn(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 			switch (HIWORD(wParam))
 			{
 			case BN_CLICKED:
-				const float *gains;
-				int length;
+				vector<float> gains;
 				int index = ExtIoGetActualMgcIdx();
-				length = RadioHandler.GetIFGainSteps(&gains);
+				gains = radio.GetIFGainSteps();
 
 				index -= 1;
-				if (index >= 0 && index < length)
+				if (index >= 0 && index < gains.size())
 					ExtIoSetMGC(index);
 
-				UpdateGain(GetDlgItem(hWnd, IDC_IFGAIN), ExtIoGetActualMgcIdx(), gains, length);
+				UpdateGain(GetDlgItem(hWnd, IDC_IFGAIN), ExtIoGetActualMgcIdx(), gains, gains.size());
 				break;
 			}
 			break;
