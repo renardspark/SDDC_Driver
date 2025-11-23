@@ -1,12 +1,6 @@
 cmake_minimum_required(VERSION 3.13)
 
-if (MSVC)
-    file(GLOB ARCH_SRC "arch/win32/*.cpp" "arch/win32/CyAPI/*.cpp")
-else()
-    file(GLOB ARCH_SRC "arch/linux/*.c" "arch/linux/*.cpp")
-endif (MSVC)
-
-file(GLOB SRC "*.cpp" "radio/*.cpp" "pffft/*.cpp" "fft_mt_r2iq/*.cpp" "dsp/*.cpp" ${ARCH_SRC})
+file(GLOB SRC "*.cpp" "radio/*.cpp" "pffft/*.cpp" "fft_mt_r2iq/*.cpp" "dsp/*.cpp" "arch/linux/*.c" "arch/linux/*.cpp")
 
 if (MSVC)
     # Assume Windows/x86 target ;)

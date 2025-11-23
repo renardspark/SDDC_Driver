@@ -1,6 +1,12 @@
 #include <string.h>
-#include <unistd.h>
 #include <assert.h>
+
+#ifdef _WIN32
+#include <windows.h>
+extern void usleep(__int64 usec);
+#else
+#include <unistd.h>
+#endif
 
 #include "FX3handler.h"
 #include "usb_device.h"

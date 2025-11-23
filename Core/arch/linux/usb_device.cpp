@@ -29,13 +29,29 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <libusb.h>
 #include <stdexcept>
 #include <format>
+
+#ifdef _WIN32
+void usleep(__int64 usec) 
+{ 
+    HANDLE timer; 
+    LARGE_INTEGER ft; 
+
+    ft.QuadPart = -(10*usec); // Convert to 100 nanosecond interval, negative value indicates relative time
+
+    timer = CreateWaitableTimer(NULL, TRUE, NULL); 
+    SetWaitableTimer(timer, &ft, 0, NULL, NULL, 0); 
+    WaitForSingleObject(timer, INFINITE); 
+    CloseHandle(timer); 
+}
+#else
+#include <unistd.h>
+#endif
 
 #include "usb_device.h"
 #include "usb_device_internals.h"
@@ -46,7 +62,6 @@
 using namespace std;
 
 const char TAG[] = "usb_device";
-
 
 typedef struct usb_device usb_device_t;
 
@@ -363,15 +378,17 @@ static libusb_device_handle *find_usb_device(USBDeviceInfo dev_select,
         if (count == dev_select.index) {
           *device = dev;
           *needs_firmware = usb_device_ids[i].needs_firmware;
-          goto EXIT_FIND_LOOP;
+
+          // Crappy solution to keep the ref counter at the same level after the unref below
+          libusb_ref_device(dev);
         }
         count++;
       }
     }
+    libusb_unref_device(dev);
   }
-EXIT_FIND_LOOP:
 
-  libusb_free_device_list(list, 1);
+  libusb_free_device_list(list, 0);
 
   if (*device == 0) {
     ErrorPrintln(TAG, "No USB device corresponds to the object given");
@@ -385,6 +402,7 @@ EXIT_FIND_LOOP:
     return 0;
   }
 
+#ifndef _WIN32
   ret = libusb_kernel_driver_active(dev_handle, 0);
   if (ret < 0) {
     libusb_close(dev_handle);
@@ -396,6 +414,7 @@ EXIT_FIND_LOOP:
     ErrorPrintln(TAG, "A kernel driver is active on the device. This prevents use by SDDC_Driver");
     return 0;
   }
+#endif
 
   ret = libusb_claim_interface(dev_handle, 0);
   if (ret < 0) {
