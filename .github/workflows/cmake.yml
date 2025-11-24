@@ -1,6 +1,8 @@
 name: CMake
 
 on:
+  # Trigger the workflow on push (all branches) or pull request (master only)
+  # but only for the main branch
   push:
   pull_request:
     branches:
@@ -155,15 +157,23 @@ jobs:
 
     - name: Create Package
       shell: bash
-      run: zip SDDC_SOAPY.ZIP ${{runner.workspace}}/build/SoapySDDC/libSDDCSupport.so
+      run: zip SDDC_SOAPY_Linux_x86_64.ZIP ${{runner.workspace}}/build/SoapySDDC/libSDDCSupport.so
 
     - uses: actions/upload-artifact@v4
       with:
         name: soapy-package
-        path: SDDC_SOAPY.ZIP
+        path: SDDC_SOAPY_Linux_x86_64.ZIP
 
   build-on-macos:
-    runs-on: macos-latest
+    name: build-on-macos
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - os: macos-15-intel
+            arch: x86_64
+          - os: macos-latest
+            arch: arm64
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -174,13 +184,34 @@ jobs:
           brew install soapysdr
           brew install fftw
 
-      - name: Build SoapySDR Module
+      - name: Configure and Install SoapySDR Module
+        shell: bash
+        working-directory: ${{ runner.workspace }}
         run: |
-          mkdir -p build
-          cd build
-          cmake -DCMAKE_INSTALL_PREFIX=$(brew --prefix) ..
-          sudo make install
-      
-      - name: Check SoapySDR Installation
+          set -euo pipefail
+          build_dir="${{ runner.workspace }}/build-${{ matrix.arch }}"
+          install_dir="${{ runner.workspace }}/install/${{ matrix.arch }}"
+          mkdir -p "${build_dir}"
+          cd "${build_dir}"
+          cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DCMAKE_OSX_ARCHITECTURES=${{ matrix.arch }} -DCMAKE_INSTALL_PREFIX="${install_dir}"
+          cmake --build . --config $BUILD_TYPE --target install
+
+      - name: Package SoapySDR Module
+        shell: bash
         run: |
-          SoapySDRUtil --info
+          install_dir="${{ runner.workspace }}/install/${{ matrix.arch }}"
+          archive="SDDC_SOAPY_OSX_${{ matrix.arch }}.zip"
+          if [ -d "${install_dir}" ]; then
+            # Create the archive from inside the install dir so the archive
+            # contains the module files without the leading install/... path.
+            (cd "${install_dir}" && zip -r "${{ runner.workspace }}/${archive}" .)
+          else
+            echo "Install dir not found: ${install_dir}" >&2
+            exit 1
+          fi
+
+      - name: Upload SoapySDR Package
+        uses: actions/upload-artifact@v4
+        with:
+          name: soapy-package-${{ matrix.arch }}
+          path: ${{ runner.workspace }}/SDDC_SOAPY_OSX_${{ matrix.arch }}.zip
