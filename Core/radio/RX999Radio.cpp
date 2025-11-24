@@ -89,7 +89,7 @@ sddc_err_t RX999Radio::SetRFMode(sddc_rf_mode_t mode)
 }
 
 
-sddc_err_t RX999Radio::SetRFAttenuation_HF(size_t att)
+sddc_err_t RX999Radio::SetRFAttenuation_HF(size_t)
 {
     return ERR_NOT_COMPATIBLE;
 }
@@ -102,7 +102,7 @@ uint32_t RX999Radio::GetTunerFrequency_HF()
 {
     return freqLO_HF;
 }
-sddc_err_t RX999Radio::SetCenterFrequency_HF(uint32_t freq)
+sddc_err_t RX999Radio::SetCenterFrequency_HF(uint32_t)
 {
     return ERR_NOT_COMPATIBLE;
 }

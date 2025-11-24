@@ -110,11 +110,11 @@ vector<float> HF103Radio::GetIFSteps_VHF()
     return vector<float>();
 }
 
-sddc_err_t HF103Radio::SetIFGain_HF  (size_t attIndex)
+sddc_err_t HF103Radio::SetIFGain_HF  (size_t)
 {
     return ERR_NOT_COMPATIBLE;
 }
-sddc_err_t HF103Radio::SetIFGain_VHF (size_t attIndex)
+sddc_err_t HF103Radio::SetIFGain_VHF (size_t)
 {
     return ERR_NOT_COMPATIBLE;
 }

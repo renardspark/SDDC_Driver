@@ -95,7 +95,7 @@ sddc_err_t RXLucyRadio::SetIFGain_HF(size_t att)  //HF103 now
 
     return Fx3->SetArgument(DAT31_ATT, d) ? ERR_SUCCESS : ERR_FX3_TRANSFER_FAILED;
 }
-sddc_err_t RXLucyRadio::SetIFGain_VHF(size_t att)
+sddc_err_t RXLucyRadio::SetIFGain_VHF(size_t)
 {
     return ERR_NOT_COMPATIBLE;
 }
@@ -104,7 +104,7 @@ uint32_t RXLucyRadio::GetTunerFrequency_HF()
 {
     return 0;
 }
-sddc_err_t RXLucyRadio::SetCenterFrequency_HF(uint32_t freq)
+sddc_err_t RXLucyRadio::SetCenterFrequency_HF(uint32_t)
 {
     return ERR_NOT_COMPATIBLE;
 }

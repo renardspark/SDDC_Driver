@@ -155,7 +155,7 @@ vector<float> BBRF103Radio::GetIFSteps_VHF()
     return this->if_steps_vhf;
 }
 
-sddc_err_t BBRF103Radio::SetIFGain_HF(size_t attIndex)
+sddc_err_t BBRF103Radio::SetIFGain_HF(size_t)
 {
     return ERR_NOT_COMPATIBLE;
 }

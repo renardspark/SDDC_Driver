@@ -131,6 +131,7 @@ sddc_err_t RX888R3Radio::SetRFAttenuation_HF(size_t att)
 }
 sddc_err_t RX888R3Radio::SetRFAttenuation_VHF(uint16_t att)
 {
+    attenuationVHFStep = att;
     // uint16_t index = att;
     // this is in VHF mode
     // return Fx3->SetArgument(R82XX_ATTENUATOR, index);
@@ -227,7 +228,7 @@ sddc_err_t RX888R3Radio::SetIFGain_HF(size_t gain_index)
     return Fx3->SetArgument(AD8340_VGA, gain) ? ERR_SUCCESS : ERR_FX3_TRANSFER_FAILED;
     
 }
-sddc_err_t RX888R3Radio::SetIFGain_VHF(size_t gain_index)
+sddc_err_t RX888R3Radio::SetIFGain_VHF(size_t /*gain_index*/)
 {
     // this is in VHF mode
     // return Fx3->SetArgument(R82XX_VGA, (uint16_t)gain_index);
