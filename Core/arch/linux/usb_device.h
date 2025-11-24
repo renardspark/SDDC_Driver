@@ -23,27 +23,29 @@
 #define __USB_DEVICE_H
 
 #include <libusb.h>
+#include <vector>
+#include <string>
 
+typedef struct USBDeviceInfo {
+  uint8_t index;
+  uint16_t usb_vendor_id;
+  uint16_t usb_product_id;
+  bool need_firmware;
+  std::string manufacturer;
+  std::string product;
+  std::string serial_number;
+} USBDeviceInfo;
 
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 typedef struct usb_device usb_device_t;
 
-struct usb_device_info {
-  unsigned char *manufacturer;
-  unsigned char *product;
-  unsigned char *serial_number;
-};
+void usb_device_init();
+void usb_device_destroy();
 
-int usb_device_count_devices();
 
-int usb_device_get_device_list(struct usb_device_info **usb_device_infos);
+std::vector<USBDeviceInfo> usb_device_get_device_list();
 
-int usb_device_free_device_list(struct usb_device_info *usb_device_infos);
-
-usb_device_t *usb_device_open(int index, const char* image,
+usb_device_t *usb_device_open(USBDeviceInfo dev_select, const char* image,
                               uint32_t size);
 
 int usb_device_handle_events(usb_device_t *t);
@@ -51,10 +53,6 @@ int usb_device_handle_events(usb_device_t *t);
 void usb_device_close(usb_device_t *t);
 
 int usb_device_control(usb_device_t *t, uint8_t request, uint16_t value,
-                       uint16_t index, uint8_t *data, uint16_t length, int read);
-
-#ifdef __cplusplus
-}
-#endif
+                       uint16_t index, uint8_t *data, uint16_t length, bool read);
 
 #endif /* __USB_DEVICE_H */

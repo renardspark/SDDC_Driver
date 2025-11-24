@@ -3,17 +3,25 @@
 #include <thread>
 #include <mutex>
 #include <condition_variable>
+#include <atomic>
+#include <vector>
 
-const int default_count = 64;
-const int spin_count = 100;
-#define ALIGN (8)
+#include "../config.h"
 
-class ringbufferbase {
+namespace {
+    const int default_count = 64;
+    const int spin_count = 100;
+    #define ALIGN (8)
+};
+
+template<typename T, size_t max_count = default_count> class ringbuffer {
+    typedef T* TPtr;
+
 public:
-    ringbufferbase(int count) :
-        max_count(count),
+    ringbuffer():
         read_index(0),
         write_index(0),
+        blocks_available(0),
         emptyCount(0),
         fullCount(0),
         writeCount(0),
@@ -21,40 +29,18 @@ public:
     {
     }
 
+    ~ringbuffer()
+    {
+        TracePrintln("ringbuffer", "");
+
+        Stop();
+    }
+
     int getFullCount() const { return fullCount; }
 
     int getEmptyCount() const { return emptyCount; }
 
     int getWriteCount() const { return writeCount; }
-
-    void ReadDone()
-    {
-        std::unique_lock<std::mutex> lk(mutex);
-        if ((write_index + 1) % max_count == read_index)
-        {
-            read_index = (read_index + 1) % max_count;
-            nonfullCV.notify_all();
-        }
-        else
-        {
-            read_index = (read_index + 1) % max_count;
-        }
-    }
-
-    void WriteDone()
-    {
-        std::unique_lock<std::mutex> lk(mutex);
-        if (read_index == write_index)
-        {
-            write_index = (write_index + 1) % max_count;
-            nonemptyCV.notify_all();
-        }
-        else
-        {
-            write_index = (write_index + 1) % max_count;
-        }
-        writeCount++;
-    }
 
     void Start()
     {
@@ -73,26 +59,93 @@ public:
         nonemptyCV.notify_all();
     }
 
-protected:
+    void setBlockSize(int size)
+    {
+        TracePrintln("ringbuffer", "");
+
+        if (block_size != size)
+        {
+            block_size = size;
+
+            int aligned_block_size = (block_size + ALIGN - 1) & (~(ALIGN - 1));
+
+            DebugPrintln("ringbuffer", "New raw buffer size : %ld", max_count * aligned_block_size);
+
+            for(auto it = buffers.begin(); it < buffers.end(); it++)
+            {
+                it->resize(aligned_block_size);
+            }
+        }
+    }
+
+    T* peekWritePtr(int offset)
+    {
+        return buffers[(write_index.load() + max_count + offset) % max_count].data();
+    }
+
+    T* peekReadPtr(int offset)
+    {
+        return buffers[(read_index.load() + max_count + offset) % max_count].data();
+    }
+
+    void push(vector<T> arr)
+    {
+        WaitUntilNotFull();
+
+        std::unique_lock<std::mutex> lk(mutex);
+
+        buffers[write_index] = arr;
+
+        write_index = (write_index + 1) % max_count;
+        blocks_available++;
+
+        if (blocks_available == 1)
+        {
+            nonemptyCV.notify_all();
+        }
+
+        writeCount++;
+    }
+
+    vector<T> pop()
+    {
+        WaitUntilNotEmpty();
+
+        std::unique_lock<std::mutex> lk(mutex);
+
+        vector<T> vec = buffers[read_index];
+
+        read_index = (read_index + 1) % max_count;
+        blocks_available--;
+
+        if (blocks_available == max_count - 1)
+        {
+            nonfullCV.notify_all();
+        }
+
+        return vec;
+    }
+
+    int getBlockSize() const { return block_size; }
 
     void WaitUntilNotEmpty()
     {
         if (stopped) return;
-        
+
         // if not empty
         for (int i = 0; i < spin_count; i++)
         {
-            if (read_index != write_index)
+            if (blocks_available > 0)
                 return;
         }
 
-        if (read_index == write_index)
+        if(blocks_available <= 0)
         {
             std::unique_lock<std::mutex> lk(mutex);
 
             emptyCount++;
             nonemptyCV.wait(lk, [this] {
-                return read_index != write_index;
+                return blocks_available > 0;
             });
         }
     }
@@ -103,24 +156,23 @@ protected:
 
         for (int i = 0; i < spin_count; i++)
         {
-            if ((write_index + 1) % max_count != read_index)
+            if (blocks_available < max_count)
                 return;
         }
 
-        if ((write_index + 1) % max_count == read_index)
+        if (blocks_available >= max_count)
         {
             std::unique_lock<std::mutex> lk(mutex);
             fullCount++;
             nonfullCV.wait(lk, [this] {
-                return (write_index + 1) % max_count != read_index;
+                return blocks_available < max_count;
             });
         }
     }
 
-    int max_count;
-
-    volatile int read_index;
-    volatile int write_index;
+    volatile atomic<size_t> read_index;
+    volatile atomic<size_t> write_index;
+    volatile atomic<size_t> blocks_available;
 
 private:
     int emptyCount;
@@ -131,75 +183,8 @@ private:
     bool stopped;
     std::condition_variable nonemptyCV;
     std::condition_variable nonfullCV;
-};
 
-template<typename T> class ringbuffer : public ringbufferbase {
-    typedef T* TPtr;
+    int block_size = 0;
 
-public:
-    ringbuffer(int count = default_count) :
-        ringbufferbase(count), block_size(0)
-    {
-        buffers = new TPtr[max_count];
-        buffers[0] = nullptr;
-    }
-
-    ~ringbuffer()
-    {
-        if (buffers[0])
-            delete[] buffers[0];
-
-        delete[] buffers;
-    }
-
-    void setBlockSize(int size)
-    {
-        if (block_size != size)
-        {
-            block_size = size;
-
-            if (buffers[0])
-                delete[] buffers[0];
-
-            int aligned_block_size = (block_size + ALIGN - 1) & (~(ALIGN - 1));
-
-            auto data = new T[max_count * aligned_block_size];
-
-            for (int i = 0; i < max_count; ++i)
-            {
-                buffers[i] = &data[i * aligned_block_size];
-            }
-        }
-    }
-
-    T* peekWritePtr(int offset)
-    {
-        return buffers[(write_index + max_count + offset) % max_count];
-    }
-
-    T* peekReadPtr(int offset)
-    {
-        return buffers[(read_index + max_count + offset) % max_count];
-    }
-
-    T* getWritePtr()
-    {
-        // if there is still space
-        WaitUntilNotFull();
-        return buffers[(write_index) % max_count];
-    }
-
-    const T* getReadPtr()
-    {
-        WaitUntilNotEmpty();
-
-        return buffers[read_index];
-    }
-
-    int getBlockSize() const { return block_size; }
-
-private:
-    int block_size;
-
-    TPtr* buffers;
+    array<vector<T>, max_count> buffers;
 };

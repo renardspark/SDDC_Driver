@@ -36,6 +36,8 @@ void log_usb_error(int usb_error_code, const char *function, const char *file,
 void log_usb_warning(int usb_error_code, const char *function, const char *file,
                      int line);
 
+#define USB_ERROR_PRINTLN(tag, usb_error_code) ErrorPrintln(tag, "libusb %s", libusb_strerror(usb_error_code))
+
 #ifdef __cplusplus
 }
 #endif

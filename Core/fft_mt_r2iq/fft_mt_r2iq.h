@@ -1,30 +1,60 @@
 #pragma once
 
-#include "r2iq.h"
 #include "fftw3.h"
-#include "config.h"
+#include "../config.h"
 #include <algorithm>
 #include <string.h>
+#include <thread>
+#include <mutex>
+#include <condition_variable>
+#include <atomic>
+#include <vector>
+
+#include "../dsp/ringbuffer.h"
 
 // use up to this many threads
 #define N_MAX_R2IQ_THREADS 1
 #define PRINT_INPUT_RANGE  0
+#define NDECIDX 7 // Number of decimation steps
 
-static const int halfFft = FFTN_R_ADC / 2;    // half the size of the first fft at ADC 64Msps real rate (2048)
-static const int fftPerBuf = transferSize / sizeof(short) / (3 * halfFft / 2) + 1; // number of ffts per buffer with 256|768 overlap
+static const int BASE_FFT_SCRAP_SIZE = 2048;
+static const int BASE_FFT_SIZE = FFTN_R_ADC + BASE_FFT_SCRAP_SIZE;
+static const int BASE_FFT_HALF_SIZE = BASE_FFT_SIZE / 2;
 
-class fft_mt_r2iq : public r2iqControlClass
+struct r2iqThreadArg;
+
+class fft_mt_r2iq
 {
 public:
     fft_mt_r2iq();
     virtual ~fft_mt_r2iq();
 
-    float setFreqOffset(float offset);
-
     void Init(float gain, ringbuffer<int16_t>* buffers, ringbuffer<float>* obuffers);
+
     void TurnOn();
     void TurnOff(void);
     bool IsOn(void);
+
+    // --- Decimation --- //
+    int getRatio()
+    {
+        return decimation_ratio[decimation];
+    }
+    bool setDecimate(uint8_t dec)
+    {
+        if(dec >= NDECIDX) return false;
+        this->decimation = dec;
+        return true;
+    }
+    // --- //
+
+    void SetRand(bool v) { this->stateADCRand = v; }
+    bool getRand() const { return this->stateADCRand; }
+
+    void setSideband(bool lsb) { this->useSidebandLSB = lsb; }
+    bool getSideband() const { return this->useSidebandLSB; }
+
+    float setFreqOffset(float offset);
 
 protected:
 
@@ -50,6 +80,7 @@ protected:
         for (int m = start; m < end; m++)
         {
             // besides circular shift, do complex multiplication with the lowpass filter's spectrum
+            // (a+ib)(c+id) = (ac - bd) + i(ad + bc)
             dest[m][0] = source1[m][0] * source2[m][0] - source1[m][1] * source2[m][1];
             dest[m][1] = source1[m][1] * source2[m][0] + source1[m][0] * source2[m][1];
         }
@@ -76,18 +107,43 @@ protected:
     }
 
 private:
+    bool r2iqOn;        // r2iq on flag
+
     ringbuffer<int16_t>* inputbuffer;    // pointer to input buffers
-    ringbuffer<float>* outputbuffer;    // pointer to ouput buffers
+    size_t inputbuffer_block_size = 0;
+
+    ringbuffer<float>* outputbuffer;    // pointer to output buffers
+
+    // --- Decimation --- //
+    int decimation = 0;   // selected decimation ratio
+      // 64 Msps:               0 => 32Msps, 1=> 16Msps, 2 = 8Msps, 3 = 4Msps, 4 = 2Msps
+      // 128 Msps: 0 => 64Msps, 1 => 32Msps, 2=> 16Msps, 3 = 8Msps, 4 = 4Msps, 5 = 2Msps
+    int decimation_ratio[NDECIDX];  // ratio
+
+    // Lookup table linking the decimation level to the size of the resulting FFT
+    // Each step divides the fft size by 2
+    // Definition : fft_size_per_decimation[x] = FFT_HALF_SIZE / 2^k
+    int fft_size_per_decimation[NDECIDX];
+    // --- //
+
+    bool stateADCRand;       // randomized ADC output
+    bool useSidebandLSB;
+
+    // number of ffts needed to process one block of the input buffer
+    int ffts_per_blocks = 0;
+
     int bufIdx;         // index to next buffer to be processed
     r2iqThreadArg* lastThread;
 
     float GainScale;
-    int mfftdim [NDECIDX]; // FFT N dimensions: mfftdim[k] = halfFft / 2^k
-    int mtunebin;
+
+    // The bin (the portion of the FFT result) in which
+    // the desired center frequency is located
+    int center_frequency_bin = 0;
 
     void *r2iqThreadf(r2iqThreadArg *th);   // thread function
 
-    void * r2iqThreadf_def(r2iqThreadArg *th);
+    void * r2iqThreadf_generic(r2iqThreadArg *th);
     void * r2iqThreadf_avx(r2iqThreadArg *th);
     void * r2iqThreadf_avx2(r2iqThreadArg *th);
     void * r2iqThreadf_avx512(r2iqThreadArg *th);
@@ -95,9 +151,9 @@ private:
 
     fftwf_complex **filterHw;       // Hw complex to each decimation ratio
 
-	fftwf_plan plan_t2f_r2c;          // fftw plan buffers Freq to Time complex to complex per decimation ratio
-	fftwf_plan *plan_f2t_c2c;          // fftw plan buffers Time to Freq real to complex per buffer
-	fftwf_plan plans_f2t_c2c[NDECIDX];
+	fftwf_plan  plan_time2freq_r2c;      // fftw plan buffers Freq to Time complex to complex per decimation ratio
+	fftwf_plan *plan_freq2time;          // fftw plan buffers Time to Freq real to complex per buffer
+	fftwf_plan  plan_freq2time_per_decimation[NDECIDX];
 
     uint32_t processor_count;
     r2iqThreadArg* threadArgs[N_MAX_R2IQ_THREADS];
@@ -117,9 +173,10 @@ struct r2iqThreadArg {
 #endif
 	}
 
-	float *ADCinTime;                // point to each threads input buffers [nftt][n]
-	fftwf_complex *ADCinFreq;         // buffers in frequency
-	fftwf_complex *inFreqTmp;         // tmp decimation output buffers (after tune shift)
+    uint8_t thread_id;
+	float *ADCinTime;         // point to each threads input buffers [nftt][n]
+	fftwf_complex *ADCinFreq; // buffers in frequency
+	fftwf_complex *inFreqTmp; // tmp decimation output buffers (after tune shift)
 #if PRINT_INPUT_RANGE
 	int MinMaxBlockCount;
 	int16_t MinValue;

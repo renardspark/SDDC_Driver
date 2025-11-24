@@ -1,35 +1,40 @@
 #include "SoapySDDC.hpp"
 #include <SoapySDR/Registry.hpp>
 #include <cstdint>
+#include <string>
 
-DevContext devicelist; // list of FX3 devices
+using namespace std;
 
-SoapySDR::KwargsList findSDDC(const SoapySDR::Kwargs &args)
+#define TAG "SoapySDDC_Registration"
+
+SoapySDR::KwargsList findSDDC(const SoapySDR::Kwargs&)
 {
-    DbgPrintf("soapySDDC::findSDDC\n");
+    TracePrintln(TAG, "");
 
-    std::vector<SoapySDR::Kwargs> results;
+    vector<SoapySDR::Kwargs> results;
 
-    unsigned char idx = 0;
-    fx3class *Fx3(CreateUsbHandler());
-    
-    while(Fx3->Enumerate(idx, devicelist.dev[idx]))
+    vector<SDDC::DeviceItem> device_list = RadioHandler::GetDeviceList();
+    for(auto sddc_device: device_list)
     {
-        SoapySDR::Kwargs devInfo;
-
-        devInfo["label"] = std::string("SDDC") + " :: " + devicelist.dev[idx];
-        results.push_back(devInfo);
-        idx++;
+        SoapySDR::Kwargs soapy_device;
+        soapy_device["index"] = to_string(sddc_device.index);
+        soapy_device["label"] = string(sddc_device.product);
+        soapy_device["serial"] = string(sddc_device.serial_number);
+        results.push_back(soapy_device);
     }
 
-    delete Fx3;
     return results;
 }
 
 SoapySDR::Device *makeSDDC(const SoapySDR::Kwargs &args)
 {
-    DbgPrintf("soapySDDC::makeSDDC\n");
-    return new SoapySDDC(args);
+    // I don't know how it works, but here I need to choose the right device
+    TracePrintln(TAG, "");
+
+    if(args.find("index") == args.end())
+        return nullptr;
+
+    return new SoapySDDC(stoul(args.at("index")));
 }
 
 static SoapySDR::Registry registerSDDC("SDDC", &findSDDC, &makeSDDC, SOAPY_SDR_ABI_VERSION);

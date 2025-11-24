@@ -255,8 +255,7 @@ CyFxSlFifoApplnUSBSetupCB (
 						case RXLUCY:
 							rxlucy_GpioSet(mdata);
 							isHandled = CyTrue;
-							break;	
-							
+							break;
 						}
 					}
 					break;
@@ -493,7 +492,7 @@ CyFxSlFifoApplnUSBSetupCB (
 					CyU3PDeviceReset(CyFalse);
 					break;
 
-            		case TESTFX3:
+            case TESTFX3:
 					glEp0Buffer[0] =  HWconfig;
 					glEp0Buffer[1] = (uint8_t) (FWconfig >> 8);
 					glEp0Buffer[2] = (uint8_t) FWconfig;
@@ -505,41 +504,40 @@ CyFxSlFifoApplnUSBSetupCB (
 					break;
 
 
-	   case READINFODEBUG:	
+			case READINFODEBUG:	
+			{
+				if(wValue >0)
+				{
+					char InputChar = (char) wValue;
+				 	if (InputChar  == 0x0d)
 					{
-					if (wValue >0)
-					{
-						char InputChar = (char) wValue;
-					 	if (InputChar  == 0x0d)
-						{
-							Qevent = USER_COMMAND_AVAILABLE << 24;
-							CyU3PQueueSend(&EventAvailable, &Qevent, CYU3P_NO_WAIT);
-						}
-						else
-						{
-							ConsoleInBuffer[ConsoleInIndex] = InputChar | 0x20;		// Save character as lower case (for compares)
-							if (ConsoleInIndex++ < sizeof(ConsoleInBuffer)) ConsoleInBuffer[ConsoleInIndex] = 0;
-							else ConsoleInIndex--;
-						}			
+						Qevent = USER_COMMAND_AVAILABLE << 24;
+						CyU3PQueueSend(&EventAvailable, &Qevent, CYU3P_NO_WAIT);
 					}
-					if (debtxtlen > 0) 
-						{
-							uint16_t len = debtxtlen;
-							memcpy(glEp0Buffer, bufdebug, len);
-							debtxtlen=0;
-							glEp0Buffer[len-1] = 0;
-							CyU3PUsbSendEP0Data (len, glEp0Buffer);
-							vendorRqtCnt++;
-							isHandled = CyTrue;
-						}
 					else
-						{
-							isHandled = CyTrue;
-							CyU3PUsbStall (0, CyTrue, CyFalse);
-						}
-					}
+					{
+						ConsoleInBuffer[ConsoleInIndex] = InputChar | 0x20;		// Save character as lower case (for compares)
+						if (ConsoleInIndex++ < sizeof(ConsoleInBuffer)) ConsoleInBuffer[ConsoleInIndex] = 0;
+						else ConsoleInIndex--;
+					}			
+				}
+				if(debtxtlen > 0) 
+				{
+					uint16_t len = debtxtlen;
+					memcpy(glEp0Buffer, bufdebug, len);
+					debtxtlen=0;
+					glEp0Buffer[len-1] = 0;
+					CyU3PUsbSendEP0Data (len, glEp0Buffer);
+					vendorRqtCnt++;
+				}
+				else
+				{
+					CyU3PUsbStall (0, CyTrue, CyFalse);
+				}
 
-					break;
+				isHandled = CyTrue;
+				break;
+			}
 
             default: /* unknown request, stall the endpoint. */
 

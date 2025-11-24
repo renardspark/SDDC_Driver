@@ -12,36 +12,36 @@
 #include "streaming.h"
 #include "../../dsp/ringbuffer.h"
 
+using namespace std;
+
 class fx3handler : public fx3class
 {
 public:
 	fx3handler();
 	virtual ~fx3handler(void);
-	bool Open() override;
+	bool Open(SDDC::DeviceItem) override;
 	bool Control(FX3Command command, uint8_t data) override;
 	bool Control(FX3Command command, uint32_t data) override;
 	bool Control(FX3Command command, uint64_t data) override;
 	bool SetArgument(uint16_t index, uint16_t value) override;
 	bool GetHardwareInfo(uint32_t* data) override;
 	bool ReadDebugTrace(uint8_t* pdata, uint8_t len) override;
-	void StartStream(ringbuffer<int16_t>& input, int numofblock) override;
+	void StartStream(ringbuffer<int16_t>& input) override;
 	void StopStream() override;
-	bool Enumerate(unsigned char &idx, char *lbuf) override;
+	size_t GetDeviceListLength() override;
+	bool GetDevice(unsigned char &idx, char *name, size_t name_len, char *serial, size_t serial_len) override;
+	vector<SDDC::DeviceItem> GetDeviceList() override;
 
 private:
-	bool ReadUsb(uint8_t command, uint16_t value, uint16_t index, uint8_t *data, size_t size);
-	bool WriteUsb(uint8_t command, uint16_t value, uint16_t index, uint8_t *data, size_t size);
-
 	bool Close(void);
 
 	static void PacketRead(uint32_t data_size, uint8_t *data, void *context);
 
-	uint32_t devidx;
-	struct usb_device_info *usb_device_infos;
+	std::vector<USBDeviceInfo> usb_device_infos;
 	usb_device_t *dev;
 	streaming_t *stream;
 	ringbuffer<int16_t> *inputbuffer;
-    bool run;
+    bool streamRunning = false;
     std::thread poll_thread;
 };
 
