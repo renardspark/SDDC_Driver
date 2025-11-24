@@ -33,7 +33,7 @@
 //#define _DEBUG  // defined in VS configuration
 #define VERBOSE_ERROR
 #define VERBOSE_WARN
-#define VERBOSE_TRACE
+//#define VERBOSE_TRACE
 //#define VERBOSE_TRACEEXTREME
 
 // macro to call callback function with just status extHWstatusT
