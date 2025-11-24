@@ -34,7 +34,8 @@ typedef enum sddc_err_t {
 	ERR_NOT_COMPATIBLE = -0x10, ///< The function is not compatible with the current hardware
 	ERR_DECIMATION_OUT_OF_RANGE, ///< The given decimation is out of the allowed range
 	ERR_NOT_LED, ///< The selected LED is not an LED
-	ERR_BUFFER_SIZE_INVALID
+	ERR_BUFFER_SIZE_INVALID,
+	ERR_OUT_OF_RANGE
 } sddc_err_t;
 
 typedef enum sddc_rf_mode_t {
@@ -48,11 +49,6 @@ typedef enum sddc_leds_t {
 	SDDC_LED_RED    = 0x02,
 	SDDC_LED_BLUE   = 0x04
 } sddc_leds_t;
-
-typedef struct sddc_device_t {
-	char product[32];
-	char serial_number[32];
-} sddc_device_t;
 
 typedef float sddc_complex_t[2];
 

@@ -191,29 +191,6 @@ size_t fx3handler::GetDeviceListLength()
     return usb_device_infos.size();
 }
 
-bool fx3handler::GetDevice(
-    unsigned char &idx,
-    char *name,
-    size_t name_len,
-    char *serial,
-    size_t serial_len)
-{
-    TracePrintln(TAG, "%d, %p, %ld, %p, %ld", idx, name, name_len, serial, serial_len);
-
-    if (usb_device_infos.size() == 0) {
-        usb_device_infos = usb_device_get_device_list();
-    }
-
-    if (idx >= usb_device_infos.size()) return false;
-
-    auto dev = usb_device_infos[idx];
-
-    strncpy(name, dev.product.c_str(), name_len);
-    strncpy(serial, dev.serial_number.c_str(), serial_len);
-
-    return true;
-}
-
 vector<SDDC::DeviceItem> fx3handler::GetDeviceList()
 {
     TracePrintln(TAG, "");

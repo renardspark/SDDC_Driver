@@ -676,24 +676,6 @@ size_t RadioHandler::GetDeviceListLength()
 
 	return len;
 }
-sddc_err_t RadioHandler::GetDevice(uint8_t dev_index, sddc_device_t *dev_pointer)
-{
-	TracePrintln(TAG, "%d, %p", dev_index, dev_pointer);
-
-	auto fx3_handler = CreateUsbHandler();
-	fx3_handler->GetDevice(dev_index, dev_pointer->product, 32, dev_pointer->serial_number, 32);
-
-	/* Old code, I don't know his exact role
-	// https://en.wikipedia.org/wiki/West_Bridge
-	int retry = 2;
-	while ((strncmp("WestBridge", devicelist.dev[idx],sizeof("WestBridge")) != NULL) && retry-- > 0)
-		Fx3->Enumerate(idx, devicelist.dev[idx]); // if it enumerates as BootLoader retry
-	idx++;
-	*/
-	delete fx3_handler;
-
-	return ERR_SUCCESS;
-}
 
 vector<SDDC::DeviceItem> RadioHandler::GetDeviceList()
 {

@@ -31,6 +31,18 @@
 extern "C" {
 #endif
 
+// --- Types --- //
+typedef void (*sddc_read_async_cb_t)(uint32_t data_size, const sddc_complex_t *data,
+										void *context);
+
+typedef struct libsddc_handler* libsddc_handler_t;
+
+typedef struct sddc_device_t {
+	char product[32];
+	char serial_number[32];
+} sddc_device_t;
+// --- //
+
 // --- Static functions --- //
 uint16_t sddc_get_device_count();
 sddc_err_t sddc_get_device(uint8_t dev_index, struct sddc_device_t *dev);
@@ -38,10 +50,8 @@ sddc_err_t sddc_get_device(uint8_t dev_index, struct sddc_device_t *dev);
 
 // ----- libsddc ----- //
 
-typedef void (*sddc_read_async_cb_t)(uint32_t data_size, const sddc_complex_t *data,
-										void *context);
 
-typedef struct libsddc_handler* libsddc_handler_t;
+
 
 // Init and destroy
 libsddc_handler_t sddc_create();

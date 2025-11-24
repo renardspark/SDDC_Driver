@@ -50,7 +50,18 @@ uint16_t sddc_get_device_count()
 
 sddc_err_t sddc_get_device(uint8_t dev_index, struct sddc_device_t *dev)
 {
-	return RadioHandler::GetDevice(dev_index, dev);
+	auto device_list = RadioHandler::GetDeviceList();
+
+	if(dev_index >= device_list.size())
+		return ERR_OUT_OF_RANGE;
+
+	// No null terminator added here, that's bad
+	strncpy(dev->product, device_list[dev_index].product.c_str(), 31);
+	strncpy(dev->serial_number, device_list[dev_index].serial_number.c_str(), 31);
+	dev->product[31] = 0;
+	dev->serial_number[31] = 0;
+
+	return ERR_SUCCESS;
 }
 // --- //
 

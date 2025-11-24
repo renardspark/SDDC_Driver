@@ -85,11 +85,6 @@ class fx3handler2 : public fx3class
         return 0;
     }
 
-    bool GetDevice(unsigned char &, char *, size_t, char *, size_t)
-    {
-        return true;
-    }
-
     vector<SDDC::DeviceItem> GetDeviceList()
     {
         return vector<SDDC::DeviceItem>();

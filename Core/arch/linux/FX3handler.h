@@ -29,7 +29,6 @@ public:
 	void StartStream(ringbuffer<int16_t>& input) override;
 	void StopStream() override;
 	size_t GetDeviceListLength() override;
-	bool GetDevice(unsigned char &idx, char *name, size_t name_len, char *serial, size_t serial_len) override;
 	vector<SDDC::DeviceItem> GetDeviceList() override;
 
 private:
