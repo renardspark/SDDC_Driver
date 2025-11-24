@@ -8,9 +8,12 @@
 
 #define _MYCONSOLE
 #define EXPORT_EXTIO_TUNE_FUNCTIONS	0
+#define SETTINGS_IDENTIFIER "sddc_1.06"
 
 
 #include "LC_ExtIO_Types.h"
+
+extern uint32_t  adcnominalfreq;
 
 extern "C" bool EXTIO_API InitHW(char *name, char *model, int& type);
 extern "C" int EXTIO_API StartHW64(int64_t freq);

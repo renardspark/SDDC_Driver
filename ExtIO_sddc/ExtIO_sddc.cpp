@@ -14,14 +14,16 @@
 #include "tdialog.h"
 #include "splashwindow.h"
 #include "PScope_uti.h"
-#include "r2iq.h"
 
 #include "git_version.h"
+
+#define TAG "ExtIO_sddc"
 
 #define   snprintf	_snprintf
 
 #define DEFAULT_TUNE_FREQ	999000.0	/* Turin MW broadcast ! */
 
+uint32_t  adcnominalfreq = DEFAULT_ADC_FREQ; 
 static bool SDR_settings_valid = false;		// assume settings are for some other ExtIO
 static char SDR_progname[2048 + 1] = "\0";
 static int  SDR_ver_major = -1;
@@ -53,7 +55,7 @@ static bool needSaveSettings;
 const char RegKeyName[] = "SOFTWARE\\SDDC";
 
 
-RadioHandlerClass RadioHandler;
+RadioHandler radio;
 
 // Dialog callback
 
@@ -161,7 +163,7 @@ BOOL APIENTRY DllMain(HMODULE hModule,
 	return TRUE;
 }
 
-static void Callback(void* context, const float* data, uint32_t len)
+static void Callback(void* context, const sddc_complex_t* data, uint32_t len)
 {
 	if (data)
 	{
@@ -191,7 +193,7 @@ bool __declspec(dllexport) __stdcall InitHW(char *name, char *model, int& type)
 			RECT rect;
 			GetWindowRect(GetDesktopWindow(), &rect);
 			SetWindowPos(Hconsole, HWND_TOPMOST, rect.right - 800, 24, 800, 420, SWP_SHOWWINDOW);
-			DbgPrintf("Oscar Steila IK1XPV fecit MMXVIII - MMXX\n");
+			DebugPrintln("Oscar Steila IK1XPV fecit MMXVIII - MMXX");
 			MakeWindowTransparent(Hconsole, 0xC0);
 			SetConsoleColorTXT(TXT_GREEN);
 		}
@@ -201,27 +203,23 @@ bool __declspec(dllexport) __stdcall InitHW(char *name, char *model, int& type)
 		auto Fx3 = CreateUsbHandler();
 		unsigned char idx = 0;
 		int selected = 0;
-		while (Fx3->Enumerate(idx, devicelist.dev[idx]) && (idx < MAXNDEV))
+		vector<SDDC::DeviceItem> device_list = RadioHandler::GetDeviceList();
+		for(int i = 0; i < device_list.size(); i++)
 		{
-			// https://en.wikipedia.org/wiki/West_Bridge
-			int retry = 2;
-			while ((strncmp("WestBridge", devicelist.dev[idx],sizeof("WestBridge")) != NULL) && retry-- > 0)
-				Fx3->Enumerate(idx, devicelist.dev[idx]); // if it enumerates as BootLoader retry
-			idx++;
+			strncpy(devicelist.dev[i], device_list[i].product.c_str(), MAXDEVSTRLEN);
 		}
-		devicelist.numdev = idx;
-		if (idx > 1){	
-			selected =  DialogBoxParam(hInst, MAKEINTRESOURCE(IDD_SELECTDEVICE), NULL, DlgSelectDevice, (LPARAM) &devicelist);
+		devicelist.numdev = device_list.size();
+		if (device_list.size() >= 1){	
+			selected = DialogBoxParam(hInst, MAKEINTRESOURCE(IDD_SELECTDEVICE), NULL, DlgSelectDevice, (LPARAM) &devicelist);
 		}
-		DbgPrintf("selected %d \n",selected);
+		DebugPrintln(TAG, "selected %d", selected);
 		idx = selected;
-		Fx3->Enumerate(idx, devicelist.dev[idx]);
 
-		gbInitHW = Fx3->Open() &&
-				RadioHandler.Init(Fx3, Callback); // Check if it there hardware
+		gbInitHW = radio.Init(device_list[idx]) == ERR_SUCCESS; // Check if it there hardware
+		radio.AttachIQ(Callback);
 	
 #ifdef _DEBUG
-			RadioHandler.EnableDebug( printf_USB_cb , GetConsoleInput);
+			radio.EnableDebug( printf_USB_cb , GetConsoleInput);
 #endif 
   
 		if (!gbInitHW)
@@ -232,30 +230,30 @@ bool __declspec(dllexport) __stdcall InitHW(char *name, char *model, int& type)
 			return gbInitHW;
 		}
 
-		strcpy(name, RadioHandler.getName());
-		strcpy(model, RadioHandler.getName());
+		strcpy(name, radio.getHardwareName());
+		strcpy(model, radio.getHardwareName());
 
 		double srate;
-		DbgPrintf("Init Values:\n");
-		DbgPrintf("SDR_settings_valid = %d\n", SDR_settings_valid);  // settings are version specific !
+		DebugPrintln(TAG, "Init Values:");
+		DebugPrintln(TAG, "SDR_settings_valid = %d", SDR_settings_valid);  // settings are version specific !
 		ExtIoGetSrates(giExtSrateIdxHF, &srate);
-		DbgPrintf("giExtSrateIdxHF = %d   %f Msps\n", giExtSrateIdxHF, srate/1000000.0);
+		DebugPrintln(TAG, "giExtSrateIdxHF = %d   %f Msps", giExtSrateIdxHF, srate/1000000.0);
 		ExtIoGetSrates(giExtSrateIdxVHF, &srate);
-		DbgPrintf("giExtSrateIdxVHF = %d   %f Msps\n", giExtSrateIdxVHF, srate/1000000.0);
-		DbgPrintf("giAttIdxHF = %d\n", giAttIdxHF);
-		DbgPrintf("giAttIdxVHF = %d\n", giAttIdxVHF);
-		DbgPrintf("giMgcIdxHF = %d\n", giMgcIdxHF);
-		DbgPrintf("giMgcIdxVHF = %d\n", giMgcIdxVHF);
+		DebugPrintln(TAG, "giExtSrateIdxVHF = %d   %f Msps", giExtSrateIdxVHF, srate/1000000.0);
+		DebugPrintln(TAG, "giAttIdxHF = %d", giAttIdxHF);
+		DebugPrintln(TAG, "giAttIdxVHF = %d", giAttIdxVHF);
+		DebugPrintln(TAG, "giMgcIdxHF = %d", giMgcIdxHF);
+		DebugPrintln(TAG, "giMgcIdxVHF = %d", giMgcIdxVHF);
 #if EXPORT_EXTIO_TUNE_FUNCTIONS
-		DbgPrintf("gfTunefreq = %lf\n", gfTunefreq);
+		DebugPrintln(TAG, "gfTunefreq = %lf", gfTunefreq);
 #endif
-		DbgPrintf("______________________________________\n");
-		DbgPrintf("adcfixedfreq = %ld\n", (long int)RadioHandler.getSampleRate());
-		DbgPrintf("adcfixedfr/4 = %ld\n", (long int)(RadioHandler.getSampleRate() / 4.0));
-		DbgPrintf("______________________________________\n");
+		DebugPrintln(TAG, "______________________________________");
+		DebugPrintln(TAG, "adcfixedfreq = %ld", (long int)radio.GetADCSampleRate());
+		DebugPrintln(TAG, "adcfixedfr/4 = %ld", (long int)(radio.GetADCSampleRate() / 4.0));
+		DebugPrintln(TAG, "______________________________________");
 	}
 
-	EXTIO_STATUS_CHANGE(pfnCallback, extHw_READY);
+	EXTIO_STATUS_CHANGE(TAG, pfnCallback, extHw_READY);
 
 	return gbInitHW;
 }
@@ -327,25 +325,25 @@ int EXTIO_API StartHWdbl(double LOfreq)
 	if (!gbInitHW)
 		return 0;
 
-	RadioHandler.Start(ExtIoGetActualSrateIdx());
+	radio.Start(ExtIoGetActualSrateIdx());
 	SetHWLOdbl(LOfreq);
 
-	if (RadioHandler.IsReady()) //  HF103 connected
+	if (true) //  HF103 connected
 	{
 		char ebuffer[64];
-		uint16_t fw = RadioHandler.GetFirmware();
+		uint16_t fw = radio.GetHardwareFirmware();
 		uint8_t hb, lb;
 		hb = fw >> 8;
 		lb = (uint8_t) fw;
-		sprintf(ebuffer, "%s v%s (%s) | %s ", SWNAME, SWVERSION, kGitHash, RadioHandler.getName());
+		sprintf(ebuffer, "%s v%s (%s) | %s ", SWNAME, SWVERSION, kGitHash, radio.getHardwareName());
 		SetWindowText(h_dialog, ebuffer);
-		EXTIO_STATUS_CHANGE(pfnCallback, extHw_RUNNING);
+		EXTIO_STATUS_CHANGE(TAG, pfnCallback, extHw_RUNNING);
 	}
 	else
 	{
 		MessageBox(NULL, "HDSDR will exit\r\nPlease verify USB connection\r\nand restart",
 				"WARNING SDR not found", MB_OK | MB_ICONWARNING);
-		EXTIO_STATUS_CHANGE(pfnCallback, extHw_Disconnected);
+		EXTIO_STATUS_CHANGE(TAG, pfnCallback, extHw_Disconnected);
 		SendF4();
 	}
 	// number of complex elements returned each
@@ -358,16 +356,16 @@ extern "C"
 void EXTIO_API StopHW(void)
 {
     EnterFunction();
-	RadioHandler.Stop();
-	if (Failures > 0)
+	radio.Stop();
+	if (false)
 	{
 		MessageBox(NULL, "Please close box\r\nand press Start",
 		"WARNING transfer fails", MB_OK | MB_ICONWARNING);
-		EXTIO_STATUS_CHANGE(pfnCallback, extHw_ERROR);
+		EXTIO_STATUS_CHANGE(TAG, pfnCallback, extHw_ERROR);
 	}
 	else
 	{
-		EXTIO_STATUS_CHANGE(pfnCallback, extHw_READY);
+		EXTIO_STATUS_CHANGE(TAG, pfnCallback, extHw_READY);
 	}
 
 	return;
@@ -383,7 +381,6 @@ void EXTIO_API CloseHW(void)
 		DestroyWindow(h_dialog);
 	if (gbInitHW)
 	{
-		RadioHandler.Close();
 	}
 
 	if (needSaveSettings)
@@ -468,45 +465,45 @@ double EXTIO_API SetHWLOdbl(double LOfreq)
 	// Set here the frequency of the controlled hardware to LOfreq
 	const double wishedLO = LOfreq;
 	double ret = 0;
-	rf_mode rfmode = RadioHandler.GetmodeRF();
-	rf_mode newmode = RadioHandler.PrepareLo(LOfreq);
+	sddc_rf_mode_t rfmode = radio.GetRFMode();
+	sddc_rf_mode_t newmode = radio.GetBestRFMode(LOfreq);
 
 	if (newmode == NOMODE) // this freq is not supported
 		return -1;
 
 	if ((newmode == VHFMODE) && (rfmode != VHFMODE))
 	{
-			RadioHandler.UpdatemodeRF(VHFMODE);
+			radio.SetRFMode(VHFMODE);
 			ExtIoSetMGC(giMgcIdxVHF);
 			SetAttenuator(giAttIdxVHF);
 			SetSrateInternal(giExtSrateIdxVHF, false);
 
-			EXTIO_STATUS_CHANGE(pfnCallback, extHw_Changed_SRATES);
-			EXTIO_STATUS_CHANGE(pfnCallback, extHw_Changed_RF_IF);
+			EXTIO_STATUS_CHANGE(TAG, pfnCallback, extHw_Changed_SRATES);
+			EXTIO_STATUS_CHANGE(TAG, pfnCallback, extHw_Changed_RF_IF);
 
 			if (giExtSrateIdxHF != giExtSrateIdxVHF)
-				EXTIO_STATUS_CHANGE(pfnCallback, extHw_Changed_SampleRate);
+				EXTIO_STATUS_CHANGE(TAG, pfnCallback, extHw_Changed_SampleRate);
 	}
 	else if ((newmode == HFMODE) && (rfmode != HFMODE))
 	{
-			RadioHandler.UpdatemodeRF(HFMODE);
+			radio.SetRFMode(HFMODE);
 			ExtIoSetMGC(giMgcIdxHF);
 			SetAttenuator(giAttIdxHF);
 			SetSrateInternal(giExtSrateIdxHF, false);
 
-			EXTIO_STATUS_CHANGE(pfnCallback, extHw_Changed_SRATES);
-			EXTIO_STATUS_CHANGE(pfnCallback, extHw_Changed_RF_IF);
+			EXTIO_STATUS_CHANGE(TAG, pfnCallback, extHw_Changed_SRATES);
+			EXTIO_STATUS_CHANGE(TAG, pfnCallback, extHw_Changed_RF_IF);
 
 			if (giExtSrateIdxHF != giExtSrateIdxVHF)
-				EXTIO_STATUS_CHANGE(pfnCallback, extHw_Changed_SampleRate);
+				EXTIO_STATUS_CHANGE(TAG, pfnCallback, extHw_Changed_SampleRate);
 	}
 
 	double internal_LOfreq = LOfreq / FreqCorrectionFactor();
-	internal_LOfreq = RadioHandler.TuneLO(internal_LOfreq);
+	internal_LOfreq = radio.SetCenterFrequency(internal_LOfreq);
 	gfLOfreq = LOfreq = internal_LOfreq * FreqCorrectionFactor();
 	if (wishedLO != LOfreq)
 	{
-		EXTIO_STATUS_CHANGE(pfnCallback, extHw_Changed_LO);
+		EXTIO_STATUS_CHANGE(TAG, pfnCallback, extHw_Changed_LO);
 	}
 
 	// 0 The function did complete without errors.
@@ -578,7 +575,7 @@ double EXTIO_API GetHWSRdbl(void)
 	EnterFunction();
 	double newSrate = 1E6;
 	int srateIdx;
-	if (RadioHandler.GetmodeRF() == VHFMODE)
+	if (radio.GetRFMode() == VHFMODE)
 		srateIdx = giExtSrateIdxVHF;
 	else
 		srateIdx = giExtSrateIdxHF;
@@ -679,9 +676,8 @@ int EXTIO_API GetAttenuators(int atten_idx, float* attenuation)
 	//    - until this functions return != 0 for no more attenuator setting
     EnterFunction();
 
-	const float *steps;
-	int max_step = RadioHandler.GetRFAttSteps(&steps);
-	if (atten_idx < max_step) {
+	vector<float> steps = radio.GetRFGainSteps();
+	if (atten_idx < steps.size()) {
 		*attenuation = steps[atten_idx];
 		return 0;
 	}
@@ -693,17 +689,18 @@ extern "C"
 int EXTIO_API GetActualAttIdx(void)
 {
 	int AttIdx;
-	if (RadioHandler.GetmodeRF() == VHFMODE)
+	if (radio.GetRFMode() == VHFMODE)
 		AttIdx = giAttIdxVHF;
 	else
 		AttIdx = giAttIdxHF;
 
-	const float *steps;
-	int max_step = RadioHandler.GetRFAttSteps(&steps);
-	if (AttIdx >= max_step)
+	vector<float> steps = radio.GetRFGainSteps();
+	if (AttIdx >= steps.size())
 	{
-		AttIdx = max_step - 1;
+		AttIdx = steps.size() - 1;
 	}
+
+	
 
 	EnterFunction1(AttIdx);
 	return AttIdx;
@@ -713,13 +710,13 @@ extern "C"
 int EXTIO_API SetAttenuator(int atten_idx)
 {
     EnterFunction1(atten_idx);
-	RadioHandler.UpdateattRF(atten_idx);
-	if (RadioHandler.GetmodeRF() == VHFMODE)
+	radio.SetRFGain(radio.GetRFGainSteps()[atten_idx]);
+	if (radio.GetRFMode() == VHFMODE)
 		giAttIdxVHF = atten_idx;
 	else
 		giAttIdxHF = atten_idx;
 
-	EXTIO_STATUS_CHANGE(pfnCallback, extHw_Changed_ATT);
+	EXTIO_STATUS_CHANGE(TAG, pfnCallback, extHw_Changed_ATT);
 
 	return 0;
 }
@@ -733,9 +730,8 @@ extern "C" int EXTIO_API ExtIoGetMGCs(int mgc_idx, float * gain)
 {
     EnterFunction();
 
-	const float *steps;
-	int max_step = RadioHandler.GetIFGainSteps(&steps);
-	if (mgc_idx < max_step) {
+	vector<float> steps = radio.GetIFGainSteps();
+	if (mgc_idx < steps.size()) {
 		*gain = steps[mgc_idx];
 		return 0;
 	}
@@ -747,16 +743,15 @@ extern "C" int EXTIO_API ExtIoGetMGCs(int mgc_idx, float * gain)
 extern "C" int EXTIO_API ExtIoGetActualMgcIdx(void)
 {
 	int MgcIdx;
-	if (RadioHandler.GetmodeRF() == VHFMODE)
+	if (radio.GetRFMode() == VHFMODE)
 		MgcIdx = giMgcIdxVHF;
 	else
 		MgcIdx = giMgcIdxHF;
 
-	const float *steps;
-	int max_step = RadioHandler.GetIFGainSteps(&steps);
-	if (MgcIdx >= max_step)
+	vector<float> steps = radio.GetIFGainSteps();
+	if (MgcIdx < steps.size())
 	{
-		MgcIdx = max_step - 1;
+		MgcIdx = steps.size() - 1;
 	}
 
 	EnterFunction1(MgcIdx);
@@ -767,13 +762,13 @@ extern "C" int EXTIO_API ExtIoGetActualMgcIdx(void)
 extern "C"  int EXTIO_API ExtIoSetMGC(int mgc_idx)
 {
     EnterFunction1(mgc_idx);
-	RadioHandler.UpdateIFGain(mgc_idx);
-	if (RadioHandler.GetmodeRF() == VHFMODE)
+	radio.SetIFGain(radio.GetIFGainSteps()[mgc_idx]);
+	if (radio.GetRFMode() == VHFMODE)
 		giMgcIdxVHF = mgc_idx;
 	else
 		giMgcIdxHF = mgc_idx;
 
-	EXTIO_STATUS_CHANGE(pfnCallback, extHw_Changed_MGC);
+	EXTIO_STATUS_CHANGE(TAG, pfnCallback, extHw_Changed_MGC);
 	return 0;
 }
 
@@ -793,7 +788,7 @@ int EXTIO_API ExtIoGetSrates(int srate_idx, double * samplerate)
 		return -1;
 
 	*samplerate = srate * FreqCorrectionFactor();
-	DbgPrintf("*ExtIoGetSrate idx %d  %e\n", srate_idx, *samplerate);
+	DebugPrintln(TAG, "*ExtIoGetSrate idx %d  %e", srate_idx, *samplerate);
 	return 0;
 }
 
@@ -816,7 +811,7 @@ extern "C"
 int  EXTIO_API ExtIoGetActualSrateIdx(void)
 {
 	EnterFunction();
-	if (RadioHandler.GetmodeRF() == VHFMODE)
+	if (radio.GetRFMode() == VHFMODE)
 		return giExtSrateIdxVHF;
 	else
 		return giExtSrateIdxHF;
@@ -829,13 +824,13 @@ static int SetSrateInternal(int srate_idx, bool internal_call)
 
 	if (0 == ExtIoGetSrates(srate_idx, &newSrate))
 	{
-		if (RadioHandler.GetmodeRF() == VHFMODE)
+		if (radio.GetRFMode() == VHFMODE)
 			giExtSrateIdxVHF = srate_idx;
 		else
 			giExtSrateIdxHF = srate_idx;
 
 		if (internal_call)
-			EXTIO_STATUS_CHANGE(pfnCallback, extHw_Changed_SampleRate);
+			EXTIO_STATUS_CHANGE(TAG, pfnCallback, extHw_Changed_SampleRate);
 
 		return 0;
 	}
@@ -854,7 +849,7 @@ extern "C"
 int SetOverclock(uint32_t adcfreq)
 {
 	adcnominalfreq = adcfreq;
-	RadioHandler.UpdateSampleRate(adcfreq);
+	radio.SetADCSampleRate(adcfreq);
 	int index = ExtIoGetActualSrateIdx();
 	double rate;
 	while (ExtIoGetSrates(index, &rate) == -1)
@@ -863,13 +858,13 @@ int SetOverclock(uint32_t adcfreq)
 	}
 	SetSrateInternal(index);
 
-	EXTIO_STATUS_CHANGE(pfnCallback, extHw_Changed_RF_IF);
-	EXTIO_STATUS_CHANGE(pfnCallback, extHw_Changed_SampleRate);
-	EXTIO_STATUS_CHANGE(pfnCallback, extHw_Changed_SRATES);
+	EXTIO_STATUS_CHANGE(TAG, pfnCallback, extHw_Changed_RF_IF);
+	EXTIO_STATUS_CHANGE(TAG, pfnCallback, extHw_Changed_SampleRate);
+	EXTIO_STATUS_CHANGE(TAG, pfnCallback, extHw_Changed_SRATES);
 
-	RadioHandler.Start(ExtIoGetActualSrateIdx());
+	radio.Start(ExtIoGetActualSrateIdx());
 	double internal_LOfreq = gfLOfreq / FreqCorrectionFactor();
-	RadioHandler.TuneLO(internal_LOfreq);
+	radio.SetCenterFrequency(internal_LOfreq);
 	return 0;
 }
 
@@ -910,7 +905,7 @@ int  EXTIO_API ExtIoGetSetting(int idx, char * description, char * value)
 	switch (idx)
 	{
 	case 0: strcpy(description, "Identifier");	snprintf(value, 1024, "%s", SETTINGS_IDENTIFIER);	return 0;
-	case 1:	strcpy(description, "RadioHWtype");	snprintf(value, 1024, "%d", RadioHandler.getModel());			return 0;
+	case 1:	strcpy(description, "RadioHWtype");	snprintf(value, 1024, "%d", radio.getHardwareModel());			return 0;
 	case 2:	strcpy(description, "HF_SampleRateIdx");	snprintf(value, 1024, "%d", giExtSrateIdxHF);			return 0;
 	case 3: strcpy(description, "VHF_SampleRateIdx");	snprintf(value, 1024, "%d", giExtSrateIdxVHF);			return 0;
 	case 4:	strcpy(description, "HF_AttenuationIdx");	snprintf(value, 1024, "%d", giAttIdxHF);			return 0;

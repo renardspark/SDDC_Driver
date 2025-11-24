@@ -8,6 +8,8 @@ CheckGitSetup()
 
 message(STATUS "CMAKE_SYSTEM_PROCESSOR=${CMAKE_SYSTEM_PROCESSOR}")
 
+set(CMAKE_CXX_STANDARD 20)
+
 ### build options
 # default build type: Release
 if(NOT CMAKE_BUILD_TYPE)
@@ -24,7 +26,7 @@ if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
 endif()
 
 if (MSVC)
-    set(CMAKE_CXX_FLAGS "-O2 /std:c++17 /EHsc /W3")
+    set(CMAKE_CXX_FLAGS "-O2 /EHsc /W3")
 
     get_filename_component(SDKPATH ${CMAKE_LINKER} DIRECTORY)
     find_program(LIBEXE lib HINTS ${SDKPATH} REQUIRED)
@@ -55,13 +57,33 @@ if (MSVC)
     SET(LIBFFTW_INCLUDE_DIRS ${SOURCE_DIR})
     SET(LIBFFTW_LIBRARY_DIRS ${SOURCE_DIR})
     SET(LIBFFTW_LIBRARIES fftw3f-3)
+
+    ExternalProject_Add(
+        LIBUSB
+        URL "https://github.com/libusb/libusb/releases/download/v1.0.29/libusb-1.0.29.7z"
+        URL_HASH SHA256=964a38152ca9a104cd00ec8d2f0617b89cd814f9b635e29763c68563d951521d
+        BUILD_IN_SOURCE TRUE
+        DOWNLOAD_NO_EXTRACT TRUE
+        CONFIGURE_COMMAND   "c:\\program files\\7-zip\\7z" x -y <DOWNLOADED_FILE>
+        BUILD_COMMAND ""
+        INSTALL_COMMAND     ""
+    )
+    if(${CMAKE_EXE_LINKER_FLAGS} MATCHES "X86")
+        SET(LIBUSB_ARCH MS32)
+    else()
+        SET(LIBUSB_ARCH MS64)
+    endif()
+    ExternalProject_Get_Property(LIBUSB SOURCE_DIR)
+    SET(LIBUSB_INCLUDE_DIRS ${SOURCE_DIR}/include)
+    SET(LIBUSB_LIBRARY_DIRS ${SOURCE_DIR}/VS2022/${LIBUSB_ARCH}/dll/)
+    SET(LIBUSB_LIBRARIES libusb-1.0)
 else()
     if (USE_DEBUG_ASAN)
         set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fsanitize=address")
-        set(CMAKE_CXX_FLAGS "-O0 -std=c++17 -Wall -Wextra")
+        set(CMAKE_CXX_FLAGS "-O0 -Wall -Wextra")
         set(ASANLIB "asan")
     else()
-        set(CMAKE_CXX_FLAGS "-O3 -std=c++17 -Wall -Wextra")
+        set(CMAKE_CXX_FLAGS "-O3 -Wall -Wextra")
     endif(USE_DEBUG_ASAN)
     #add_compile_options(-Wall -Wextra -pedantic)
     include(FindPkgConfig)

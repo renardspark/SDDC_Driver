@@ -1,12 +1,6 @@
 cmake_minimum_required(VERSION 3.13)
 
-if (MSVC)
-    file(GLOB ARCH_SRC "arch/win32/*.cpp" "arch/win32/CyAPI/*.cpp")
-else()
-    file(GLOB ARCH_SRC "arch/linux/*.c" "arch/linux/*.cpp")
-endif (MSVC)
-
-file(GLOB SRC "*.cpp" "radio/*.cpp" "pffft/*.cpp" "fft_mt_r2iq/*.cpp" "dsp/*.cpp" ${ARCH_SRC})
+file(GLOB SRC "*.cpp" "radio/*.cpp" "pffft/*.cpp" "fft_mt_r2iq/*.cpp" "dsp/*.cpp" "arch/linux/*.c" "arch/linux/*.cpp")
 
 if (MSVC)
     # Assume Windows/x86 target ;)
@@ -54,6 +48,10 @@ target_compile_definitions(SDDC_CORE PUBLIC _CRT_SECURE_NO_WARNINGS)
 target_include_directories(SDDC_CORE PUBLIC "${LIBFFTW_INCLUDE_DIRS}")
 target_link_directories(SDDC_CORE PUBLIC "${LIBFFTW_LIBRARY_DIRS}")
 target_link_libraries(SDDC_CORE PUBLIC ${LIBFFTW_LIBRARIES})
+
+target_include_directories(SDDC_CORE PUBLIC "${LIBUSB_INCLUDE_DIRS}")
+target_link_directories(SDDC_CORE PUBLIC "${LIBUSB_LIBRARY_DIRS}")
+target_link_libraries(SDDC_CORE PUBLIC ${LIBUSB_LIBRARIES})
 
 if (NOT USE_SIMD_OPTIMIZATIONS)
    target_compile_definitions(SDDC_CORE PRIVATE NO_SIMD_OPTIM)
