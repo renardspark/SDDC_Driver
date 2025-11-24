@@ -37,6 +37,10 @@ uint32_t RadioHardware::GetADCSampleRate()
 sddc_err_t RadioHardware::SetADCSampleRate(uint32_t adc_rate)
 {
     TracePrintln(TAG, "%d", adc_rate);
+
+    if(sampleRate == adc_rate)
+        return ERR_SUCCESS;
+
     const array<float, 2> limits = GetADCSampleRateLimits();
     if(adc_rate < limits[0]) adc_rate = limits[0];
     if(adc_rate > limits[1]) adc_rate = limits[1];
@@ -126,7 +130,6 @@ sddc_err_t RadioHardware::SetBiasT_HF(bool new_state)
     TracePrintln(TAG, "%s", new_state ? "on" : "off");
 
     stateBiasT_HF = new_state;
-
     if (stateBiasT_HF)
         return SetGPIO(BIAS_HF);
     else
@@ -141,6 +144,7 @@ bool RadioHardware::GetBiasT_VHF()
 sddc_err_t RadioHardware::SetBiasT_VHF(bool new_state)
 {
     TracePrintln(TAG, "%s", new_state ? "on" : "off");
+
     stateBiasT_VHF = new_state;
     if (stateBiasT_VHF)
         return SetGPIO(BIAS_VHF);
@@ -166,6 +170,9 @@ sddc_err_t RadioHardware::SetGPIO(uint32_t mask)
 {
     TracePrintln(TAG, "%04X", mask);
 
+    if((gpios | mask) == gpios)
+        return ERR_SUCCESS;
+
     gpios |= mask;
     return Fx3->Control(GPIOFX3, gpios) ? ERR_SUCCESS : ERR_FX3_TRANSFER_FAILED;
 }
@@ -173,6 +180,9 @@ sddc_err_t RadioHardware::SetGPIO(uint32_t mask)
 sddc_err_t RadioHardware::UnsetGPIO(uint32_t mask)
 {
     TracePrintln(TAG, "%04X", mask);
+
+    if((gpios & ~mask) == gpios)
+        return ERR_SUCCESS;
 
     gpios &= ~mask;
     return Fx3->Control(GPIOFX3, gpios) ? ERR_SUCCESS : ERR_FX3_TRANSFER_FAILED;
