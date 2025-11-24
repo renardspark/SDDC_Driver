@@ -115,6 +115,7 @@ sddc_err_t BBRF103Radio::SetRFAttenuation_VHF(uint16_t att)
 
 sddc_err_t BBRF103Radio::SetCenterFrequency_HF(uint32_t freq)
 {
+    freqLO_HF = freq;
     return ERR_NOT_COMPATIBLE;
 }
 

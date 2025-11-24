@@ -168,6 +168,4 @@ private:
 	bool r2iqEnabled = false;
 };
 
-extern unsigned long Failures;
-
 #endif
