@@ -180,6 +180,16 @@ RadioHandler::~RadioHandler()
 	delete fx3;
 }
 
+/**
+ * @brief Define the function to call when a real sample is available
+ * 
+ * \note The callback will only be called if `convert_r2iq` is set to `false` when calling `RadioHandler::Start`
+ * 
+ * @param[in] callback Function called when a real sample is available
+ * @param[in] context User defined context passed to the callback function
+ * 
+ * \retval ERR_SUCCESS
+ */
 sddc_err_t RadioHandler::AttachReal(void (*callback)(void*context, const int16_t*, uint32_t), void *context)
 {
 	TracePrintln(TAG, "");
@@ -190,6 +200,16 @@ sddc_err_t RadioHandler::AttachReal(void (*callback)(void*context, const int16_t
 	return ERR_SUCCESS;
 }
 
+/**
+ * @brief Define the function to call when an IQ sample is available
+ * 
+ * \note The callback will only be called if `convert_r2iq` is set to `true` when calling `RadioHandler::Start`
+ * 
+ * @param[in] callback Function called when a real sample is available
+ * @param[in] context User defined context passed to the callback function
+ * 
+ * \retval ERR_SUCCESS
+ */
 sddc_err_t RadioHandler::AttachIQ(void (*callback)(void*context, const sddc_complex_t*, uint32_t), void *context)
 {
 	TracePrintln(TAG, "");
@@ -201,7 +221,7 @@ sddc_err_t RadioHandler::AttachIQ(void (*callback)(void*context, const sddc_comp
 }
 
 /**
- * @brief Create a new Radio Handler
+ * @brief Set the decimation factor of the FFT
  * 
  * \note This function has no effect if `convert_r2iq` is set to `false` when calling `RadioHandler::Start`
  * 
@@ -226,12 +246,11 @@ sddc_err_t RadioHandler::SetDecimation(uint8_t decimate)
 
 
 /**
- * @brief Start the SDR and processing functions
+ * @brief Start the SDR data stream and processing functions
  * 
  * @param[in] convert_r2iq Set to `true` to output IQ data instead of real samples
  * 
- * \retval ERR_SUCCESS
- * \retval ERR_DECIMATION_OUT_OF_RANGE
+ * \retval sddc_err_t
  */
 sddc_err_t RadioHandler::Start(bool convert_r2iq)
 {
@@ -266,6 +285,11 @@ sddc_err_t RadioHandler::Start(bool convert_r2iq)
 	return ERR_SUCCESS;
 }
 
+/**
+ * @brief Stop the SDR data stream and processing functions
+ * 
+ * \retval sddc_err_t
+ */
 sddc_err_t RadioHandler::Stop()
 {
 	TracePrintln(TAG, "");
@@ -510,6 +534,11 @@ sddc_err_t RadioHandler::SetIFGain(float new_gain)
 	}
 }
 
+/**
+ * @brief Get the frequency currently tuned in the SDR
+ * 
+ * \retval The frequency tuned in hertz
+ */
 uint32_t RadioHandler::GetCenterFrequency()
 {
 	TracePrintln(TAG, "");
@@ -524,6 +553,14 @@ uint32_t RadioHandler::GetCenterFrequency()
 			return 0;
 	}
 }
+
+/**
+ * @brief Set the frequency tuned in the SDR
+ * 
+ * @param[in] wishedFreq The frequency to use in hertz
+ * 
+ * \retval sddc_err_t
+ */
 sddc_err_t RadioHandler::SetCenterFrequency(uint32_t wishedFreq)
 {
 	TracePrintln(TAG, "%d", wishedFreq);
@@ -644,7 +681,20 @@ sddc_err_t RadioHandler::SetRand(bool new_state)
 
 
 // ----- RadioHardware passthrough ----- //
+
+/**
+ * @brief Return the best RF mode to use for the frequency given
+ * 
+ * @param[in] freq The frequency to test in hertz
+ * 
+ * \retval sddc_rf_mode_t
+ */
 sddc_rf_mode_t  RadioHandler::GetBestRFMode(uint64_t freq) { return hardware->GetBestRFMode(freq); };
+/**
+ * @brief Return the current RF mode
+ * 
+ * \retval sddc_rf_mode_t
+ */
 sddc_rf_mode_t  RadioHandler::GetRFMode()                  { return hardware->GetRFMode(); };
 
 array<float, 2> RadioHandler::GetADCSampleRateLimits()          { return hardware->GetADCSampleRateLimits(); };
