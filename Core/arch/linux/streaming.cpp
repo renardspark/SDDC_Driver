@@ -68,7 +68,6 @@ typedef struct streaming {
   enum StreamingStatus status;
   int random;
   usb_device_t *usb_device;
-  uint32_t sample_rate;
   uint32_t frame_size;
   uint32_t num_frames;
   streaming_read_async_cb_t callback;
@@ -79,7 +78,6 @@ typedef struct streaming {
 } streaming_t;
 
 
-static const uint32_t DEFAULT_SAMPLE_RATE = 64000000;   /* 64Msps */
 const unsigned int BULK_XFER_TIMEOUT = 5000; // timeout (in ms) for each bulk transfer
 
 
@@ -98,7 +96,6 @@ streaming_t *streaming_open_sync(usb_device_t *usb_device)
   t->status = STREAMING_STATUS_READY;
   t->random = 0;
   t->usb_device = usb_device;
-  t->sample_rate = DEFAULT_SAMPLE_RATE;
   t->frame_size = 0;
   t->num_frames = 0;
   t->callback = 0;
@@ -175,7 +172,6 @@ streaming_t *streaming_open_async(usb_device_t *usb_device, uint32_t frame_size,
   t->status = STREAMING_STATUS_READY;
   t->random = 0;
   t->usb_device = usb_device;
-  t->sample_rate = DEFAULT_SAMPLE_RATE;
   t->frame_size = frame_size;
   t->num_frames = num_frames;
   t->callback = callback;
@@ -222,14 +218,6 @@ void streaming_close(streaming_t *t)
   }
   free(t);
   return;
-}
-
-
-int streaming_set_sample_rate(streaming_t *t, uint32_t sample_rate)
-{
-  /* no checks yet */
-  t->sample_rate = sample_rate;
-  return 0;
 }
 
 

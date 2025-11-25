@@ -43,8 +43,6 @@ streaming_t *streaming_open_async(usb_device_t *usb_device, uint32_t frame_size,
 
 void streaming_close(streaming_t *that);
 
-int streaming_set_sample_rate(streaming_t *that, uint32_t sample_rate);
-
 int streaming_set_random(streaming_t *that, int random);
 
 int streaming_start(streaming_t *that);
