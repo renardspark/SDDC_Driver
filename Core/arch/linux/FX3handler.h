@@ -37,7 +37,7 @@ private:
 	static void PacketRead(uint32_t data_size, uint8_t *data, void *context);
 
 	std::vector<USBDeviceInfo> usb_device_infos;
-	usb_device_t *dev;
+	USBDevice dev;
 	streaming_t *stream;
 	ringbuffer<int16_t> *inputbuffer;
     bool streamRunning = false;

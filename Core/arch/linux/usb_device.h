@@ -19,8 +19,7 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
-#ifndef __USB_DEVICE_H
-#define __USB_DEVICE_H
+#pragma once
 
 #include <libusb.h>
 #include <vector>
@@ -36,23 +35,52 @@ typedef struct USBDeviceInfo {
   std::string serial_number;
 } USBDeviceInfo;
 
+typedef struct streaming streaming_t;
 
-typedef struct usb_device usb_device_t;
-
-void usb_device_init();
-void usb_device_destroy();
+typedef void (*streaming_read_async_cb_t)(uint32_t data_size, uint8_t *data,
+                                          void *context);
 
 
 std::vector<USBDeviceInfo> usb_device_get_device_list();
 
-usb_device_t *usb_device_open(USBDeviceInfo dev_select, const char* image,
-                              uint32_t size);
+class USBDevice
+{
+  public:
+    USBDevice();
+    ~USBDevice();
 
-int usb_device_handle_events(usb_device_t *t);
+    std::vector<USBDeviceInfo> getDeviceList();
 
-void usb_device_close(usb_device_t *t);
+    void open(USBDeviceInfo dev_select, const char* image, uint32_t size);
+    void close();
+    int control(uint8_t request, uint16_t value, uint16_t index, uint8_t *data, uint16_t length, bool read);
+    int handleEvents();
 
-int usb_device_control(usb_device_t *t, uint8_t request, uint16_t value,
-                       uint16_t index, uint8_t *data, uint16_t length, bool read);
+    streaming_t *streaming_open_sync();
+    streaming_t *streaming_open_async(uint32_t frame_size,
+                      uint32_t num_frames, streaming_read_async_cb_t callback,
+                      void *callback_context);
+    int streaming_framesize(streaming_t *that);
+    void streaming_close(streaming_t *that);
+    int streaming_set_random(streaming_t *that, int random);
+    int streaming_start(streaming_t *that);
+    int streaming_stop(streaming_t *that);
+    int streaming_reset_status(streaming_t *that);
+    int streaming_read_sync(streaming_t *that, uint8_t *data, int length,
+                            int *transferred);
 
-#endif /* __USB_DEVICE_H */
+  private:
+    libusb_context *usb_ctx = nullptr;
+
+    libusb_device_handle *dev_handle = nullptr;
+    int completed;
+    uint8_t bulk_in_endpoint_address = 0;
+    uint16_t bulk_in_max_packet_size = 0;
+    uint8_t bulk_in_max_burst = 0;
+
+    int list_endpoints(struct libusb_endpoint_descriptor endpoints[],
+      struct libusb_ss_endpoint_companion_descriptor ss_endpoints[],
+      libusb_device *device);
+    libusb_device_handle *find_usb_device(USBDeviceInfo,
+      libusb_device **device, int *needs_firmware);
+};

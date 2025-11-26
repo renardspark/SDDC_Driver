@@ -29,33 +29,6 @@
 extern "C" {
 #endif
 
-typedef struct streaming streaming_t;
-
-typedef void (*streaming_read_async_cb_t)(uint32_t data_size, uint8_t *data,
-		                                      void *context);
-
-streaming_t *streaming_open_sync(usb_device_t *usb_device);
-
-streaming_t *streaming_open_async(usb_device_t *usb_device, uint32_t frame_size,
-                                  uint32_t num_frames,
-                                  streaming_read_async_cb_t callback,
-                                  void *callback_context);
-
-void streaming_close(streaming_t *that);
-
-int streaming_set_random(streaming_t *that, int random);
-
-int streaming_start(streaming_t *that);
-
-int streaming_stop(streaming_t *that);
-
-int streaming_reset_status(streaming_t *that);
-
-int streaming_framesize(streaming_t *that);
-
-int streaming_read_sync(streaming_t *that, uint8_t *data, int length,
-                        int *transferred);
-
 #ifdef __cplusplus
 }
 #endif

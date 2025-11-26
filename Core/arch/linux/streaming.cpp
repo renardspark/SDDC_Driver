@@ -67,7 +67,6 @@ enum StreamingStatus {
 typedef struct streaming {
   enum StreamingStatus status;
   int random;
-  usb_device_t *usb_device;
   uint32_t frame_size;
   uint32_t num_frames;
   streaming_read_async_cb_t callback;
@@ -81,12 +80,12 @@ typedef struct streaming {
 const unsigned int BULK_XFER_TIMEOUT = 5000; // timeout (in ms) for each bulk transfer
 
 
-streaming_t *streaming_open_sync(usb_device_t *usb_device)
+streaming_t *USBDevice::streaming_open_sync()
 {
   streaming_t *ret_val = 0;
 
   /* we must have a bulk in device to transfer data from */
-  if (usb_device->bulk_in_endpoint_address == 0) {
+  if (bulk_in_endpoint_address == 0) {
     log_error("no USB bulk in endpoint found", __func__, __FILE__, __LINE__);
     return ret_val;
   }
@@ -95,7 +94,6 @@ streaming_t *streaming_open_sync(usb_device_t *usb_device)
   streaming_t *t = (streaming_t *) malloc(sizeof(streaming_t));
   t->status = STREAMING_STATUS_READY;
   t->random = 0;
-  t->usb_device = usb_device;
   t->frame_size = 0;
   t->num_frames = 0;
   t->callback = 0;
@@ -108,32 +106,32 @@ streaming_t *streaming_open_sync(usb_device_t *usb_device)
   return ret_val;
 }
 
-int streaming_framesize(streaming_t *that)
+int USBDevice::streaming_framesize(streaming_t *that)
 {
   return that->frame_size;
 }
 
-streaming_t *streaming_open_async(usb_device_t *usb_device, uint32_t frame_size,
+streaming_t *USBDevice::streaming_open_async(uint32_t frame_size,
                       uint32_t num_frames, streaming_read_async_cb_t callback,
                       void *callback_context)
 {
   streaming_t *ret_val = 0;
 
   /* we must have a bulk in device to transfer data from */
-  if (usb_device->bulk_in_endpoint_address == 0) {
+  if (bulk_in_endpoint_address == 0) {
     log_error("no USB bulk in endpoint found", __func__, __FILE__, __LINE__);
     return ret_val;
   }
 
   /* frame size must be a multiple of max_packet_size * (max_burst + 1) */
-  uint32_t max_xfer_size = usb_device->bulk_in_max_packet_size *
-                           (usb_device->bulk_in_max_burst + 1);
+  uint32_t max_xfer_size = bulk_in_max_packet_size *
+                           (bulk_in_max_burst + 1);
   if ( !max_xfer_size ) {
     fprintf(stderr, "ERROR: maximum transfer size is 0. probably not connected at USB 3 port?!\n");
     return ret_val;
   }
 
-  int iso_packets_per_frame = frame_size / usb_device->bulk_in_max_packet_size;
+  int iso_packets_per_frame = frame_size / bulk_in_max_packet_size;
   // fprintf(stderr, "frame_size = %u, iso_packets_per_frame = %d\n", (unsigned)frame_size, iso_packets_per_frame);
 
   if (frame_size % max_xfer_size != 0) {
@@ -145,7 +143,7 @@ streaming_t *streaming_open_async(usb_device_t *usb_device, uint32_t frame_size,
   uint8_t **frames = (uint8_t **) malloc(num_frames * sizeof(uint8_t *));
   for (uint32_t i = 0; i < num_frames; ++i) {
     #ifdef __linux__
-    frames[i] = libusb_dev_mem_alloc(usb_device->dev_handle, frame_size);
+    frames[i] = libusb_dev_mem_alloc(dev_handle, frame_size);
     #elif defined(__APPLE__)
     frames[i] = (uint8_t *) malloc(frame_size);
     #else
@@ -156,7 +154,7 @@ streaming_t *streaming_open_async(usb_device_t *usb_device, uint32_t frame_size,
       log_error("libusb_dev_mem_alloc() failed", __func__, __FILE__, __LINE__);
       for (uint32_t j = 0; j < i; j++) {
         #ifdef __linux__
-        libusb_dev_mem_free(usb_device->dev_handle, frames[j], frame_size);
+        libusb_dev_mem_free(dev_handle, frames[j], frame_size);
         #elif defined(__APPLE__)
         free(frames[j]);
         #else
@@ -171,7 +169,6 @@ streaming_t *streaming_open_async(usb_device_t *usb_device, uint32_t frame_size,
   streaming_t *t = (streaming_t *) malloc(sizeof(streaming_t));
   t->status = STREAMING_STATUS_READY;
   t->random = 0;
-  t->usb_device = usb_device;
   t->frame_size = frame_size;
   t->num_frames = num_frames;
   t->callback = callback;
@@ -182,8 +179,8 @@ streaming_t *streaming_open_async(usb_device_t *usb_device, uint32_t frame_size,
   struct libusb_transfer **transfers = (struct libusb_transfer **) malloc(num_frames * sizeof(struct libusb_transfer *));
   for (uint32_t i = 0; i < num_frames; ++i) {
     transfers[i] = libusb_alloc_transfer(0);	// iso_packets_per_frame ?
-    libusb_fill_bulk_transfer(transfers[i], usb_device->dev_handle,
-                              usb_device->bulk_in_endpoint_address,
+    libusb_fill_bulk_transfer(transfers[i], dev_handle,
+                              bulk_in_endpoint_address,
                               frames[i], frame_size, (libusb_transfer_cb_fn)streaming_read_async_callback,
                               t, BULK_XFER_TIMEOUT);
   }
@@ -195,7 +192,7 @@ streaming_t *streaming_open_async(usb_device_t *usb_device, uint32_t frame_size,
 }
 
 
-void streaming_close(streaming_t *t)
+void USBDevice::streaming_close(streaming_t *t)
 {
   if (t->transfers) {
     for (uint32_t i = 0; i < t->num_frames; ++i) {
@@ -206,7 +203,7 @@ void streaming_close(streaming_t *t)
   if (t->frames != 0) {
     for (uint32_t i = 0; i < t->num_frames; ++i) {
       #ifdef __linux__
-      libusb_dev_mem_free(t->usb_device->dev_handle, t->frames[i],
+      libusb_dev_mem_free(dev_handle, t->frames[i],
                           t->frame_size);
       #elif defined(__APPLE__)
       free(t->frames[i]);
@@ -221,14 +218,14 @@ void streaming_close(streaming_t *t)
 }
 
 
-int streaming_set_random(streaming_t *t, int random)
+int USBDevice::streaming_set_random(streaming_t *t, int random)
 {
   t->random = random;
   return 0;
 }
 
 
-int streaming_start(streaming_t *t)
+int USBDevice::streaming_start(streaming_t *t)
 {
   if (t->status != STREAMING_STATUS_READY) {
     fprintf(stderr, "ERROR - streaming_start() called with streaming status not READY: %d\n", t->status);
@@ -259,7 +256,7 @@ int streaming_start(streaming_t *t)
 }
 
 
-int streaming_stop(streaming_t *t)
+int USBDevice::streaming_stop(streaming_t *t)
 {
   /* if there is no callback, then streaming is synchronous - nothing to do */
   if (t->callback == 0) {
@@ -274,7 +271,7 @@ int streaming_stop(streaming_t *t)
   /* flush all the events */
   struct timeval noblock = { 0, 0 };
   while (t->active_transfers > 0) {
-    int ret = libusb_handle_events_timeout_completed(t->usb_device->context, &noblock, 0);
+    int ret = libusb_handle_events_timeout_completed(usb_ctx, &noblock, 0);
     if (ret < 0) {
       log_usb_error(ret, __func__, __FILE__, __LINE__);
       t->status = STREAMING_STATUS_FAILED;
@@ -299,7 +296,7 @@ int streaming_stop(streaming_t *t)
 }
 
 
-int streaming_reset_status(streaming_t *t)
+int USBDevice::streaming_reset_status(streaming_t *t)
 {
   switch (t->status) {
     case STREAMING_STATUS_READY:
@@ -328,10 +325,10 @@ int streaming_reset_status(streaming_t *t)
 }
 
 
-int streaming_read_sync(streaming_t *t, uint8_t *data, int length, int *transferred)
+int USBDevice::streaming_read_sync(streaming_t *t, uint8_t *data, int length, int *transferred)
 {
-  int ret = libusb_bulk_transfer(t->usb_device->dev_handle,
-                                 t->usb_device->bulk_in_endpoint_address,
+  int ret = libusb_bulk_transfer(dev_handle,
+                                 bulk_in_endpoint_address,
                                  data, length, transferred, BULK_XFER_TIMEOUT);
   if (ret < 0) {
     log_usb_error(ret, __func__, __FILE__, __LINE__);

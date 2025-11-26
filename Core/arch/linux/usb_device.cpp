@@ -66,13 +66,8 @@ const char TAG[] = "usb_device";
 typedef struct usb_device usb_device_t;
 
 /* internal functions */
-static libusb_device_handle *find_usb_device(USBDeviceInfo,
-                             libusb_device **device, int *needs_firmware);
 static int load_image(libusb_device_handle *dev_handle,
                       const char *image, uint32_t size);
-static int list_endpoints(struct libusb_endpoint_descriptor endpoints[],
-                          struct libusb_ss_endpoint_companion_descriptor ss_endpoints[],
-                          libusb_device *device);
 
 
 struct usb_device_id {
@@ -89,31 +84,35 @@ static struct usb_device_id usb_device_ids[] = {
 static int n_usb_device_ids = sizeof(usb_device_ids) / sizeof(usb_device_ids[0]);
 
 
-void usb_device_init()
+USBDevice::USBDevice()
 {
-  int ret = libusb_init(nullptr);
+  int ret = libusb_init_context(&usb_ctx, /*options=*/nullptr, /*num_options=*/0);
   if(ret < 0) {
+    USB_ERROR_PRINTLN(TAG, ret);
     throw runtime_error(format("{} ({}:{}) ", __FUNCTION__, __FILE__, __LINE__) + libusb_error_name(ret) + " " + libusb_strerror(ret));
   }
 
-  ret = libusb_set_option(nullptr, LIBUSB_OPTION_LOG_LEVEL, LIBUSB_LOG_LEVEL_INFO);
-  if(ret < 0) {
-    throw runtime_error(format("{} ({}:{}) ", __FUNCTION__, __FILE__, __LINE__) + libusb_error_name(ret) + " " + libusb_strerror(ret));
-  }
+  #ifdef _DEBUG
+    ret = libusb_set_option(usb_ctx, LIBUSB_OPTION_LOG_LEVEL, LIBUSB_LOG_LEVEL_INFO);
+    if(ret < 0) {
+      USB_ERROR_PRINTLN(TAG, ret);
+      throw runtime_error(format("{} ({}:{}) ", __FUNCTION__, __FILE__, __LINE__) + libusb_error_name(ret) + " " + libusb_strerror(ret));
+    }
+  #endif
 }
-void usb_device_destroy()
+USBDevice::~USBDevice()
 {
-  libusb_exit(nullptr);
+  libusb_exit(usb_ctx);
 }
 
 
-vector<USBDeviceInfo> usb_device_get_device_list()
+vector<USBDeviceInfo> USBDevice::getDeviceList()
 {
   const int MAX_STRING_BYTES = 256;
   char temporary_string[MAX_STRING_BYTES];
 
   libusb_device **list;
-  ssize_t nusbdevices = libusb_get_device_list(0, &list);
+  ssize_t nusbdevices = libusb_get_device_list(usb_ctx, &list);
   if (nusbdevices < 0) {
     USB_ERROR_PRINTLN(TAG, nusbdevices);
     throw runtime_error("error");
@@ -194,20 +193,16 @@ FAIL2:
 }
 
 
-usb_device_t *usb_device_open(USBDeviceInfo index, const char* image,
+void USBDevice::open(USBDeviceInfo index, const char* image,
                               uint32_t size)
 {
   usb_device_t *ret_val = 0;
-  libusb_context *ctx = 0;
-
-  //libusb_set_option(ctx, LIBUSB_OPTION_LOG_LEVEL, LIBUSB_LOG_LEVEL_DEBUG);
 
   libusb_device *device;
   int needs_firmware = 0;
-  libusb_device_handle *dev_handle = find_usb_device(index, &device, &needs_firmware);
+  dev_handle = find_usb_device(index, &device, &needs_firmware);
   if (dev_handle == 0) {
     ErrorPrintln(TAG, "Unable to open the USB device");
-    return 0;
   }
 
   if (needs_firmware) {
@@ -215,7 +210,6 @@ usb_device_t *usb_device_open(USBDeviceInfo index, const char* image,
     if (ret != 0) {
       ErrorPrintln(TAG, "Failed to load firmware image in the SDR");
       libusb_close(dev_handle);
-      return 0;
     }
 
     /* rescan USB to get a new device handle */
@@ -228,12 +222,10 @@ usb_device_t *usb_device_open(USBDeviceInfo index, const char* image,
     dev_handle = find_usb_device(index, &device, &needs_firmware);
     if (dev_handle == 0) {
       ErrorPrintln(TAG, "Unable to open the USB device after loading the firmware");
-      return 0;
     }
     if (needs_firmware) {
       ErrorPrintln(TAG, "The USB device is still in boot loader mode");
       libusb_close(dev_handle);
-      return 0;
     }
   }
 
@@ -241,7 +233,6 @@ usb_device_t *usb_device_open(USBDeviceInfo index, const char* image,
   if ( speed == LIBUSB_SPEED_LOW || speed == LIBUSB_SPEED_FULL || speed == LIBUSB_SPEED_HIGH ) {
       ErrorPrintln(TAG, "The USB device isn't capable of using USB 3.x SuperSpeed");
       libusb_close(dev_handle);
-      return 0;
   }
 
   /* list endpoints */
@@ -251,7 +242,6 @@ usb_device_t *usb_device_open(USBDeviceInfo index, const char* image,
   if (ret < 0) {
     log_error("list_endpoints() failed", __func__, __FILE__, __LINE__);
     libusb_close(dev_handle);
-    return 0;
   }
   int nendpoints = ret;
   uint8_t bulk_in_endpoint_address = 0;
@@ -270,11 +260,10 @@ usb_device_t *usb_device_open(USBDeviceInfo index, const char* image,
   if (bulk_in_endpoint_address == 0) {
     fprintf(stderr, "ERROR - bulk in endpoint not found\n");
     libusb_close(dev_handle);
-    return 0;
   }
 
   /* we are good here - create and initialize the usb_device */
-  usb_device_t *t = (usb_device_t *) malloc(sizeof(usb_device_t));
+  /*usb_device_t *t = (usb_device_t *) malloc(sizeof(usb_device_t));
   t->dev = device;
   t->dev_handle = dev_handle;
   t->context = ctx;
@@ -284,31 +273,26 @@ usb_device_t *usb_device_open(USBDeviceInfo index, const char* image,
   for (int i = 0; i < nendpoints; ++i) {
     t->endpoints[i] = endpoints[i];
     t->ss_endpoints[i] = ss_endpoints[i];
-  }
-  t->bulk_in_endpoint_address = bulk_in_endpoint_address;
-  t->bulk_in_max_packet_size = bulk_in_max_packet_size;
-  t->bulk_in_max_burst = bulk_in_max_burst;
-
-  ret_val = t;
-  return ret_val;
+  }*/
+  this->bulk_in_endpoint_address = bulk_in_endpoint_address;
+  this->bulk_in_max_packet_size = bulk_in_max_packet_size;
+  this->bulk_in_max_burst = bulk_in_max_burst;
 }
 
 
-void usb_device_close(usb_device_t *t)
+void USBDevice::close()
 {
-  libusb_close(t->dev_handle);
-  free(t);
-  return;
+  libusb_close(dev_handle);
 }
 
 
-int usb_device_handle_events(usb_device_t *t)
+int USBDevice::handleEvents()
 {
-  return libusb_handle_events_completed(t->context, &t->completed);
+  return libusb_handle_events_completed(usb_ctx, &completed);
 }
 
 /**
- * @brief Send a request to the USb device
+ * @brief Send a request to the USB device
  * 
  * @param[in] t usb_device handle
  * @param[in] request
@@ -321,7 +305,7 @@ int usb_device_handle_events(usb_device_t *t)
  * \retval 0
  * \retval -1
  */
-int usb_device_control(usb_device_t *t, uint8_t request, uint16_t value,
+int USBDevice::control(uint8_t request, uint16_t value,
                        uint16_t index, uint8_t *data, uint16_t length, bool read) {
 
   const uint8_t bmWriteRequestType = LIBUSB_ENDPOINT_OUT | LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_RECIPIENT_DEVICE;
@@ -330,7 +314,7 @@ int usb_device_control(usb_device_t *t, uint8_t request, uint16_t value,
   int ret;
 
   if (!read) {
-      ret = libusb_control_transfer(t->dev_handle, bmWriteRequestType,
+      ret = libusb_control_transfer(dev_handle, bmWriteRequestType,
                                     request, value, index, data, length,
                                     timeout);
       if (ret < 0) {
@@ -340,7 +324,7 @@ int usb_device_control(usb_device_t *t, uint8_t request, uint16_t value,
   }
   else
   {
-      ret = libusb_control_transfer(t->dev_handle, bmReadRequestType,
+      ret = libusb_control_transfer(dev_handle, bmReadRequestType,
                                     request, value, index, data, length,
                                     timeout);
       // LIBUSB_ERROR_PIPE indicates that the device voluntarily closed
@@ -357,14 +341,14 @@ int usb_device_control(usb_device_t *t, uint8_t request, uint16_t value,
 
 
 /* internal functions */
-static libusb_device_handle *find_usb_device(USBDeviceInfo dev_select,
+libusb_device_handle *USBDevice::find_usb_device(USBDeviceInfo dev_select,
                              libusb_device **device, int *needs_firmware)
 {
   *device = 0;
   *needs_firmware = 0;
 
   libusb_device **list = 0;
-  ssize_t nusbdevices = libusb_get_device_list(NULL, &list);
+  ssize_t nusbdevices = libusb_get_device_list(usb_ctx, &list);
   if (nusbdevices < 0) {
     USB_ERROR_PRINTLN(TAG, nusbdevices);
     return (libusb_device_handle *)0;
@@ -441,7 +425,7 @@ int load_image(libusb_device_handle *dev_handle, const char *image, uint32_t ima
   return ret_val;
 }
 
-static int list_endpoints(struct libusb_endpoint_descriptor endpoints[],
+int USBDevice::list_endpoints(struct libusb_endpoint_descriptor endpoints[],
                           struct libusb_ss_endpoint_companion_descriptor ss_endpoints[],
                           libusb_device *device)
 {
@@ -467,7 +451,7 @@ static int list_endpoints(struct libusb_endpoint_descriptor endpoints[],
         }
         endpoints[count] = *endpoint;
         struct libusb_ss_endpoint_companion_descriptor *endpoint_ss_companion;
-        ret = libusb_get_ss_endpoint_companion_descriptor(0, endpoint,
+        ret = libusb_get_ss_endpoint_companion_descriptor(usb_ctx, endpoint,
                 &endpoint_ss_companion);
 
         //printf("PktSize=%d\n", endpoint->wMaxPacketSize * (endpoint_ss_companion->bMaxBurst + 1));
