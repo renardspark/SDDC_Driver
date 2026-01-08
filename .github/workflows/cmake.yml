@@ -109,7 +109,7 @@ jobs:
 
     - uses: actions/upload-artifact@v4
       with:
-        name: extio-package
+        name: ExtIO_Windows_x86
         path: SDDC_EXTIO.ZIP
 
   build-on-linux:
@@ -161,8 +161,8 @@ jobs:
 
     - uses: actions/upload-artifact@v4
       with:
-        name: soapy-package
-        path: SDDC_SOAPY_Linux_x86_64.ZIP
+        name: SoapySDDC_Linux_x86_64
+        path: ${{runner.workspace}}/build/SoapySDDC/libSDDCSupport.so
 
   build-on-macos:
     name: build-on-macos
