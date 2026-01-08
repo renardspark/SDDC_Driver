@@ -256,7 +256,7 @@ sddc_err_t RadioHandler::Start(bool convert_r2iq)
 {
 	TracePrintln(TAG, "%s", convert_r2iq ? "true" : "false");
 
-	// Stop the stream  if it was already running
+	// Stop the stream if it was already running
 	sddc_err_t ret = Stop();
 	if(ret != ERR_SUCCESS) return ret;
 
@@ -315,6 +315,36 @@ sddc_err_t RadioHandler::Stop()
 		sddc_err_t ret = hardware->StopStream();
 		if(ret != ERR_SUCCESS) return ret;
 	}
+	return ERR_SUCCESS;
+}
+
+/**
+ * @brief Pause the data transmission from the SDR
+ * 
+ * \retval sddc_err_t
+ */
+sddc_err_t RadioHandler::Pause()
+{
+	TracePrintln(TAG, "");
+
+	sddc_err_t ret = hardware->StopStream();
+	if(ret != ERR_SUCCESS) return ret;
+
+	return ERR_SUCCESS;
+}
+
+/**
+ * @brief Resume data transmission from the SDR
+ * 
+ * \retval sddc_err_t
+ */
+sddc_err_t RadioHandler::Resume()
+{
+	TracePrintln(TAG, "");
+
+	sddc_err_t ret = hardware->StartStream();
+	if(ret != ERR_SUCCESS) return ret;
+
 	return ERR_SUCCESS;
 }
 

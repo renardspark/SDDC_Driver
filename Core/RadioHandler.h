@@ -59,6 +59,8 @@ public:
 	sddc_err_t AttachIQ(void (*callback)(void* context, const sddc_complex_t*, uint32_t), void* context = nullptr);
 	sddc_err_t Start(bool convert_r2iq);
 	sddc_err_t Stop();
+	sddc_err_t Pause();
+	sddc_err_t Resume();
 
 	// --- r2iq --- //
 	sddc_err_t	SetDecimation(uint8_t decimate);
