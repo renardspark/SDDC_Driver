@@ -164,6 +164,11 @@ jobs:
         name: SoapySDDC_Linux_x86_64
         path: ${{runner.workspace}}/build/SoapySDDC/libSDDCSupport.so
 
+    - uses: actions/upload-artifact@v4
+      with:
+        name: sddc-cli_Linux_x86_64
+        path: ${{runner.workspace}}/build/sddc-cli/sddc-cli
+
   build-on-macos:
     name: build-on-macos
     runs-on: ${{ matrix.os }}
