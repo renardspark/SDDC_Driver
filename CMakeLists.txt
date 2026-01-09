@@ -96,6 +96,7 @@ set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -D_DEBUG")
 add_subdirectory(Core)
 add_subdirectory(libsddc)
 add_subdirectory(unittest)
+add_subdirectory(sddc-cli)
 
 if (MSVC)
     add_subdirectory(ExtIO_sddc)

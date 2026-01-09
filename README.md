@@ -7,6 +7,7 @@
 This project includes the following components :
 - **/Core** : The main library controlling the SDR from a computer
   - **RadioHandler** : The API exposed by the Core module. Suitable to interact directly with the SDR from C++ programs
+- **/sddc-cli** : A command line tool to use your SDR easily
 - **/ExtIO_sddc** : The compatibility layer for ExtIO.dll and HDSDR
 - **/SoapySDDC** : The compatibility layer for [SoapySDR](https://github.com/pothosware/SoapySDR/wiki)
 - **/libsddc** : A wrapper for C-based programs to interact directly with the SDR
