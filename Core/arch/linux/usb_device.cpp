@@ -264,10 +264,6 @@ void USBDevice::open(USBDeviceInfo index, const char* image,
 
   /* we are good here - create and initialize the usb_device */
   /*usb_device_t *t = (usb_device_t *) malloc(sizeof(usb_device_t));
-  t->dev = device;
-  t->dev_handle = dev_handle;
-  t->context = ctx;
-  t->completed = 0;
   t->nendpoints = nendpoints;
   memset(t->endpoints, 0, sizeof(t->endpoints));
   for (int i = 0; i < nendpoints; ++i) {
