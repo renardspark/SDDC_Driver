@@ -79,9 +79,6 @@ void RadioHandler::OnDataPacket()
 
 /**
  * @brief Create a new Radio Handler
- * 
- * @param[in] dev_index The index of the SDR to use. You can get the list of
- *   available devices by using the static function of RadioHandler
  */
 RadioHandler::RadioHandler():
 	DbgPrintFX3(nullptr),
@@ -98,6 +95,12 @@ RadioHandler::RadioHandler():
 	this->r2iqCntrl = new fft_mt_r2iq();
 }
 
+/**
+ * @brief Initialize the RadioHandler instance
+ * 
+ * @param[in] dev_index The index of the SDR to use. You can get the list of
+ *   available devices by using the static function of RadioHandler
+ */
 sddc_err_t RadioHandler::Init(SDDC::DeviceItem dev_index)
 {
 	TracePrintln(TAG, "*");
@@ -190,7 +193,7 @@ RadioHandler::~RadioHandler()
  * 
  * \retval ERR_SUCCESS
  */
-sddc_err_t RadioHandler::AttachReal(void (*callback)(void*context, const int16_t*, uint32_t), void *context)
+sddc_err_t RadioHandler::AttachReal(void (*callback)(void *context, const int16_t *data, uint32_t data_length), void *context)
 {
 	TracePrintln(TAG, "");
 
@@ -727,6 +730,11 @@ sddc_rf_mode_t  RadioHandler::GetBestRFMode(uint64_t freq) { return hardware->Ge
  */
 sddc_rf_mode_t  RadioHandler::GetRFMode()                  { return hardware->GetRFMode(); };
 
+/**
+ * @brief Get the limits of the ADC of your SDR
+ * 
+ * \retval array<float, 2> An array containing, in order, the lower and the higher limit of the ADC in Hertz
+ */
 array<float, 2> RadioHandler::GetADCSampleRateLimits()          { return hardware->GetADCSampleRateLimits(); };
 uint32_t	RadioHandler::GetADCSampleRate()                    { return hardware->GetADCSampleRate(); };
 sddc_err_t	RadioHandler::SetADCSampleRate(uint32_t samplefreq) { return hardware->SetADCSampleRate(samplefreq); };
