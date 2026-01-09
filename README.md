@@ -23,15 +23,19 @@ The objective is also to better separate the main driver code (Core module) from
 **Warning** : Consider this fork as no longer compatible with Windows, as I've not tried it on this platform. On the other end, Linux and MacOS should be fine.
 
 
-## How to use ?
+## Getting started
 
-You can download the latest EXTIO driver from the releases: https://github.com/ik1xpv/ExtIO_sddc/releases.
-The direct link to the current version v1.2.0 Version released at 18/3/2021 is: https://github.com/ik1xpv/ExtIO_sddc/releases/download/v1.2.0/SDDC_EXTIO.ZIP.
+You can download the latest binaries from the releases: https://github.com/renardspark/SDDC_Driver/releases.
 
-*If you want to try the beta EXTIO driver which is for testing, you can find the binary for each change here: https://github.com/ik1xpv/ExtIO_sddc/actions. Select one specific code change you like to try, click on the link of the change. And you will find the binary on the bottom of the change.*
+If you want to give a try to the most recent build, the binaries are available [on Github Actions](https://github.com/renardspark/SDDC_Driver/actions/workflows/cmake.yml).
 
 
-## Build Instructions for ExtIO, SoapySDDC and libsddc
+### Linux / MacOS
+
+SoapySDR support is available on Linux / MacOS. It can be used with SDRs such as Gqrx or SDRangel.
+
+
+## Build Instructions for Core, sddc-cli, ExtIO_sddc, SoapySDDC and libsddc
 
 ### Windows
 
@@ -40,15 +44,13 @@ The direct link to the current version v1.2.0 Version released at 18/3/2021 is: 
 1. Running the following commands in the root folder of the cloned repro:
 ```bash
 > mkdir build
-> cd build
-> cmake ..
-> cmake --build .
+> cmake -S . -B build/
+> cmake --build build/
 or
-> cmake --build . --config Release
-> cmake --build . --config RelWithDebInfo
+> cmake --build build/ --config Release
+or
+> cmake --build build/ --config RelWithDebInfo
 ```
-
-* You need to download **32bit version** of fftw library from fftw website http://www.fftw.org/install/windows.html. Copy libfftw3f-3.dll from the downloaded zip package to the same folder of extio DLL.
 
 * If you are running **64bit** OS, you need to run the following different commands instead of "cmake .." based on your Visual Studio Version:
 ```
@@ -61,21 +63,20 @@ VS2015: >cmake .. -G "Visual Studio 14 2015 Win32"
 ### Linux
 
 1. Install CMake 3.19+
-1. Install development packages:
+2. Install development packages:
 ```bash
-> sudo apt install libfftw3-dev
+> sudo apt install libfftw3-dev libusb-1.0-0-dev
 ```
 
-1. Running the following commands in the root folder of the cloned repo:
+3. Run the following commands in the root folder of the cloned repo:
 ```bash
 > mkdir build
-> cd build
-> cmake ..
-> cmake --build .
+> cmake -S . -B build/
+> cmake --build build/
 or
-> cmake --build . --config Release
+> cmake --build build/ --config Release
 or
-> cmake --build . --config RelWithDebInfo
+> cmake --build build/ --config RelWithDebInfo
 ```
 
 ## Build Instructions for SDDC_FX3
