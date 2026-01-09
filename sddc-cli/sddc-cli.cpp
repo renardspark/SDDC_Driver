@@ -7,7 +7,12 @@ using namespace std;
 
 void frame_cb(void *context, const int16_t *data, uint32_t length)
 {
-	fwrite(data, length, 1, stdout);
+	fwrite(data, length * sizeof(int16_t), 1, stdout);
+}
+
+void frame_cb_iq(void *context, const sddc_complex_t *data, uint32_t length)
+{
+	fwrite(data, length * sizeof(sddc_complex_t), 1, stdout);
 }
 
 int main(int argc, char const *argv[])
@@ -25,9 +30,8 @@ int main(int argc, char const *argv[])
 	listen_command.add_argument("sample-rate").scan<'i', uint32_t>();
 	listen_command.add_argument("frequency")
 		.help("Center frequency to tune to")
-		.scan<'i', uint8_t>();
-	//listen_command.add_argument("-d", "--decimation");
-	//listen_command.add_argument("-i", "--output-iq");
+		.scan<'i', uint32_t>();
+	listen_command.add_argument("-i", "--output-iq").flag();
 
 	program.add_subparser(list_command);
 	program.add_subparser(listen_command);
@@ -72,8 +76,16 @@ int main(int argc, char const *argv[])
 		radio.SetRFMode(radio.GetBestRFMode(frequency));
 		radio.SetCenterFrequency(frequency);
 
-		radio.AttachReal(frame_cb);
-		radio.Start(false);
+		if(listen_command["--output-iq"] == true)
+		{
+			radio.AttachIQ(frame_cb_iq);
+			radio.Start(true);
+		}
+		else
+		{
+			radio.AttachReal(frame_cb);
+			radio.Start(false);
+		}
 
 		while(1);
 	}
