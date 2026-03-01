@@ -29,11 +29,13 @@ int main(int argc, char const *argv[])
 	list_command.add_description("List all SDDC devices connected");
 
 	argparse::ArgumentParser listen_command("listen");
-	listen_command.add_description("Start the device and output data stream");
+	listen_command.add_description("Start the device and output data stream\nBy default, raw ADC samples are outputted to stdout as int16_t (2 bytes per sample)\nIf -i is used, I/Q samples are outputted as float[2] (8 bytes per sample; first float is real, second float is imaginary)");
 	listen_command.add_argument("device")
 		.help("Index of the device to use")
 		.scan<'i', uint8_t>();
-	listen_command.add_argument("sample-rate").scan<'i', uint32_t>();
+	listen_command.add_argument("sample-rate")
+		.scan<'i', uint32_t>()
+		.help("The sample rate of the ADC");
 	listen_command.add_argument("frequency")
 		.help("Center frequency to tune to")
 		.scan<'i', uint32_t>();
