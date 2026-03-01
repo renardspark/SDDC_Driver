@@ -140,6 +140,9 @@ void fft_mt_r2iq::TurnOn() {
 }
 
 void fft_mt_r2iq::TurnOff(void) {
+	// Don't stop if already stopped
+	if(!this->r2iqOn) return;
+
 	this->r2iqOn = false;
 
 	inputbuffer->Stop();
