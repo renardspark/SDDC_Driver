@@ -223,19 +223,27 @@ void USBDevice::open(USBDeviceInfo index, const char* image,
 
     needs_firmware = 0;
     dev_handle = find_usb_device(index, &device, &needs_firmware);
+
     if (dev_handle == 0) {
       ErrorPrintln(TAG, "Unable to open the USB device after loading the firmware");
+      return;
     }
+
+    libusb_unref_device(device);
+
     if (needs_firmware) {
       ErrorPrintln(TAG, "The USB device is still in boot loader mode");
       libusb_close(dev_handle);
+      return;
     }
   }
 
   int speed = libusb_get_device_speed(device);
   if ( speed == LIBUSB_SPEED_LOW || speed == LIBUSB_SPEED_FULL || speed == LIBUSB_SPEED_HIGH ) {
       ErrorPrintln(TAG, "The USB device isn't capable of using USB 3.x SuperSpeed");
+      libusb_unref_device(device);
       libusb_close(dev_handle);
+      return;
   }
 
   /* list endpoints */
@@ -244,8 +252,14 @@ void USBDevice::open(USBDeviceInfo index, const char* image,
   int ret = list_endpoints(endpoints, ss_endpoints, device);
   if (ret < 0) {
     log_error("list_endpoints() failed", __func__, __FILE__, __LINE__);
+    libusb_unref_device(device);
     libusb_close(dev_handle);
+    return;
   }
+
+  // No need for the device pointer anymore
+  libusb_unref_device(device);
+
   int nendpoints = ret;
   uint8_t bulk_in_endpoint_address = 0;
   uint16_t bulk_in_max_packet_size = 0;
