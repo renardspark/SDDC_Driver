@@ -118,17 +118,16 @@ void fx3handler::StartStream(ringbuffer<int16_t> &samples_buf)
 
     inputbuffer = &samples_buf;
 
-    stream = dev.streaming_open_async(inputbuffer->getBlockSize() * sizeof(int16_t), concurrentTransfers, PacketRead, this);
-    //samples_buf.setBlockSize(streaming_framesize(stream) / sizeof(int16_t));
+    dev.streaming_open_async(inputbuffer->getBlockSize() * sizeof(int16_t), concurrentTransfers, PacketRead, this);
+    //samples_buf.setBlockSize(dev.streaming_framesize() / sizeof(int16_t));
 
     DebugPrintln(TAG, "Samples buffer blocksize: %d", samples_buf.getBlockSize());
 
     // Start background thread to poll the events
     streamRunning = true;
-    if (stream)
-    {
-        dev.streaming_start(stream);
-    }
+
+    // FIXME: Will crash if streaming hasn't properly started
+    dev.streaming_start();
 
     poll_thread = std::thread(
         [this]()
@@ -146,10 +145,11 @@ void fx3handler::StopStream()
     TracePrintln(TAG, "");
 
     streamRunning = false;
+
     poll_thread.join();
 
-    dev.streaming_stop(stream);
-    dev.streaming_close(stream);
+    dev.streaming_stop();
+    dev.streaming_close();
 }
 
 void fx3handler::PacketRead(uint32_t data_size, uint8_t *data, void *context)

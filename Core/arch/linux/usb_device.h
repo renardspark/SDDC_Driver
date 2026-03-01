@@ -56,21 +56,22 @@ class USBDevice
     int control(uint8_t request, uint16_t value, uint16_t index, uint8_t *data, uint16_t length, bool read);
     int handleEvents();
 
-    streaming_t *streaming_open_sync();
-    streaming_t *streaming_open_async(uint32_t frame_size,
+    int streaming_open_sync();
+    int streaming_open_async(uint32_t frame_size,
                       uint32_t num_frames, streaming_read_async_cb_t callback,
                       void *callback_context);
-    int streaming_framesize(streaming_t *that);
-    void streaming_close(streaming_t *that);
-    int streaming_set_random(streaming_t *that, int random);
-    int streaming_start(streaming_t *that);
-    int streaming_stop(streaming_t *that);
-    int streaming_reset_status(streaming_t *that);
-    int streaming_read_sync(streaming_t *that, uint8_t *data, int length,
+    int streaming_framesize();
+    void streaming_close();
+    int streaming_set_random(int random);
+    int streaming_start();
+    int streaming_stop();
+    int streaming_reset_status();
+    int streaming_read_sync(uint8_t *data, int length,
                             int *transferred);
 
   private:
     libusb_context *usb_ctx = nullptr;
+    streaming_t *streaming_obj = nullptr;
 
     libusb_device_handle *dev_handle = nullptr;
     int completed;

@@ -9,7 +9,6 @@
 
 #include "../../FX3Class.h"
 #include "usb_device.h"
-#include "streaming.h"
 #include "../../dsp/ringbuffer.h"
 
 using namespace std;
@@ -38,7 +37,6 @@ private:
 
 	std::vector<USBDeviceInfo> usb_device_infos;
 	USBDevice dev;
-	streaming_t *stream;
 	ringbuffer<int16_t> *inputbuffer;
     bool streamRunning = false;
     std::thread poll_thread;
