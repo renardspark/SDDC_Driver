@@ -127,7 +127,7 @@ const uint32_t transferSize = 131072;
 const uint32_t transferSamples = transferSize / sizeof(int16_t);
 const uint32_t concurrentTransfers = 16;  // used to be 96, but I think it is too high
 
-const uint32_t DEFAULT_ADC_FREQ = 64000000;	// ADC sampling frequency
+const uint32_t DEFAULT_ADC_FREQ = 1000000;	// ADC sampling frequency
 
 const uint32_t DEFAULT_TRANSFERS_PER_SEC = DEFAULT_ADC_FREQ / transferSamples;
 
