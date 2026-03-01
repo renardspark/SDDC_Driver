@@ -381,8 +381,13 @@ static void LIBUSB_CALL streaming_read_async_callback(struct libusb_transfer *tr
       /* librtlsdr does also ignore LIBUSB_TRANSFER_CANCELLED */
       t->active_transfers.fetch_sub(1);
       return;
-    case LIBUSB_TRANSFER_ERROR:
     case LIBUSB_TRANSFER_TIMED_OUT:
+      // Time out error isn't necessarily bad if the SDR is configured on a slow sample rate
+      // FIXME: This isn't perfect as the number of transfer will not increase if a faster sample rate is requested afterwards
+      log_usb_warning(transfer->status, __func__, __FILE__, __LINE__);
+      t->active_transfers.fetch_sub(1);
+      return;
+    case LIBUSB_TRANSFER_ERROR:
     case LIBUSB_TRANSFER_STALL:
     case LIBUSB_TRANSFER_NO_DEVICE:
     case LIBUSB_TRANSFER_OVERFLOW:
