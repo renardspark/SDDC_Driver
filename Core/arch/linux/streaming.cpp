@@ -49,6 +49,7 @@ extern void usleep(__int64 usec);
 
 using namespace std;
 
+const char TAG[] = "streaming";
 typedef struct streaming streaming_t;
 
 /* internal functions */
@@ -71,7 +72,6 @@ typedef struct streaming {
   streaming_read_async_cb_t callback;
   void *callback_context;
   uint8_t **frames;
-  struct libusb_transfer **transfers;
   atomic_int active_transfers;
 } streaming_t;
 
@@ -96,7 +96,6 @@ int USBDevice::streaming_open_sync()
   t->callback = 0;
   t->callback_context = 0;
   t->frames = 0;
-  t->transfers = 0;
   t->active_transfers = 0;
 
   streaming_obj = t;
@@ -171,7 +170,7 @@ int USBDevice::streaming_open_async(uint32_t frame_size,
   t->frames = frames;
 
   /* populate the required libusb_transfer fields */
-  struct libusb_transfer **transfers = (struct libusb_transfer **) malloc(num_frames * sizeof(struct libusb_transfer *));
+  transfers = (struct libusb_transfer **) malloc(num_frames * sizeof(struct libusb_transfer *));
   for (uint32_t i = 0; i < num_frames; ++i) {
     transfers[i] = libusb_alloc_transfer(0);	// iso_packets_per_frame ?
     libusb_fill_bulk_transfer(transfers[i], dev_handle,
@@ -179,7 +178,6 @@ int USBDevice::streaming_open_async(uint32_t frame_size,
                               frames[i], frame_size, (libusb_transfer_cb_fn)streaming_read_async_callback,
                               t, BULK_XFER_TIMEOUT);
   }
-  t->transfers = transfers;
   t->active_transfers = 0;
 
   streaming_obj = t;
@@ -189,11 +187,15 @@ int USBDevice::streaming_open_async(uint32_t frame_size,
 
 void USBDevice::streaming_close()
 {
-  if (streaming_obj->transfers) {
+  TracePrintln(TAG, "");
+
+  if(!streaming_obj) return;
+
+  if (transfers) {
     for (uint32_t i = 0; i < streaming_obj->num_frames; ++i) {
-      libusb_free_transfer(streaming_obj->transfers[i]);
+      libusb_free_transfer(transfers[i]);
     }
-    free(streaming_obj->transfers);
+    free(transfers);
   }
   if (streaming_obj->frames != 0) {
     for (uint32_t i = 0; i < streaming_obj->num_frames; ++i) {
@@ -209,6 +211,7 @@ void USBDevice::streaming_close()
     free(streaming_obj->frames);
   }
   free(streaming_obj);
+  streaming_obj = nullptr;
   return;
 }
 
@@ -236,7 +239,7 @@ int USBDevice::streaming_start()
   /* submit all the transfers */
   streaming_obj->active_transfers = 0;
   for (uint32_t i = 0; i < streaming_obj->num_frames; ++i) {
-    int ret = libusb_submit_transfer(streaming_obj->transfers[i]);
+    int ret = libusb_submit_transfer(transfers[i]);
     if (ret < 0) {
       log_usb_error(ret, __func__, __FILE__, __LINE__);
       streaming_obj->status = STREAMING_STATUS_FAILED;
@@ -276,7 +279,7 @@ int USBDevice::streaming_stop()
 
   /* cancel all the active transfers */
   for (uint32_t i = 0; i < streaming_obj->num_frames; ++i) {
-    int ret = libusb_cancel_transfer(streaming_obj->transfers[i]);
+    int ret = libusb_cancel_transfer(transfers[i]);
     if (ret < 0) {
       if (ret == LIBUSB_ERROR_NOT_FOUND)  {
         continue;

@@ -84,4 +84,7 @@ class USBDevice
       libusb_device *device);
     libusb_device_handle *find_usb_device(USBDeviceInfo,
       libusb_device **device, int *needs_firmware);
+
+    // --- Streaming --- //
+    struct libusb_transfer **transfers = nullptr;
 };
