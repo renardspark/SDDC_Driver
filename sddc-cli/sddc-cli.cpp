@@ -2,6 +2,12 @@
 #include <argparse/argparse.hpp>
 #include "RadioHandler.h"
 
+#ifdef _WIN32
+#include <windows.h>
+#else
+#include <unistd.h>
+#endif
+
 using namespace std;
 
 
@@ -31,7 +37,13 @@ int main(int argc, char const *argv[])
 	listen_command.add_argument("frequency")
 		.help("Center frequency to tune to")
 		.scan<'i', uint32_t>();
-	listen_command.add_argument("-i", "--output-iq").flag();
+	listen_command.add_argument("-i", "--output-iq")
+		.help("If enabled, I/Q samples are outputted")
+		.flag();
+	listen_command.add_argument("-d", "--duration")
+		.help("In seconds, time to wait before exiting")
+		.default_value(uint32_t(0))
+		.scan<'i', uint32_t>();
 
 	program.add_subparser(list_command);
 	program.add_subparser(listen_command);
@@ -59,6 +71,7 @@ int main(int argc, char const *argv[])
 	{
 		const uint8_t device_index = listen_command.get<uint8_t>("device");
 		const uint32_t frequency = listen_command.get<uint32_t>("frequency");
+		const uint32_t duration = listen_command.get<uint32_t>("--duration");
 
 		vector<SDDC::DeviceItem> device_list = RadioHandler::GetDeviceList();
 
@@ -87,7 +100,16 @@ int main(int argc, char const *argv[])
 			radio.Start(false);
 		}
 
-		while(1);
+		if(duration)
+		{
+			sleep(duration);
+		}
+		else
+		{
+			while(1);
+		}
+
+		radio.Stop();
 	}
 
 
