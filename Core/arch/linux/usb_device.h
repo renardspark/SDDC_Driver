@@ -74,7 +74,7 @@ class USBDevice
     streaming_t *streaming_obj = nullptr;
 
     libusb_device_handle *dev_handle = nullptr;
-    int completed;
+    int completed = 0;
     uint8_t bulk_in_endpoint_address = 0;
     uint16_t bulk_in_max_packet_size = 0;
     uint8_t bulk_in_max_burst = 0;

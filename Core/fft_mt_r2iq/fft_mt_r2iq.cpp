@@ -131,8 +131,11 @@ void fft_mt_r2iq::TurnOn() {
 
 	for (unsigned t = 0; t < processor_count; t++) {
 		r2iq_thread[t] = std::thread(
-			[this] (void* arg)
-				{ return this->r2iqThreadf((r2iqThreadArg*)arg); }, (void*)threadArgs[t]);
+			[this] (void* arg) {
+				return this->r2iqThreadf((r2iqThreadArg*)arg);
+			},
+			(void*)threadArgs[t]
+		);
 	}
 }
 

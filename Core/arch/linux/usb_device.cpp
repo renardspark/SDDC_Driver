@@ -102,12 +102,17 @@ USBDevice::USBDevice()
 }
 USBDevice::~USBDevice()
 {
+  TracePrintln(TAG, "");
+
+  streaming_close();
   libusb_exit(usb_ctx);
 }
 
 
 vector<USBDeviceInfo> USBDevice::getDeviceList()
 {
+  TracePrintln(TAG, "");
+
   const int MAX_STRING_BYTES = 256;
   char temporary_string[MAX_STRING_BYTES];
 
@@ -196,8 +201,6 @@ FAIL2:
 void USBDevice::open(USBDeviceInfo index, const char* image,
                               uint32_t size)
 {
-  usb_device_t *ret_val = 0;
-
   libusb_device *device;
   int needs_firmware = 0;
   dev_handle = find_usb_device(index, &device, &needs_firmware);
@@ -278,6 +281,8 @@ void USBDevice::open(USBDeviceInfo index, const char* image,
 
 void USBDevice::close()
 {
+  TracePrintln(TAG, "");
+
   libusb_close(dev_handle);
 }
 
