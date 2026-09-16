@@ -212,7 +212,7 @@ bool __declspec(dllexport) __stdcall InitHW(char *name, char *model, int& type)
 	
 #ifdef _DEBUG
 			radio.EnableDebug( printf_USB_cb , GetConsoleInput);
-#endif 
+#endif
   
 		if (!gbInitHW)
 		{

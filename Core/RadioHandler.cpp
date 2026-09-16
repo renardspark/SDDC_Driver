@@ -269,8 +269,6 @@ sddc_err_t RadioHandler::Start(bool convert_r2iq)
 	ret = hardware->StartStream();
 	if(ret != ERR_SUCCESS) return ret;
 
-	//iq_buffer.setBlockSize(EXT_BLOCKLEN * sizeof(float));
-
 	r2iqEnabled = convert_r2iq;
 	if(r2iqEnabled) r2iqCntrl->TurnOn();
 
