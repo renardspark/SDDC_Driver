@@ -56,7 +56,6 @@ static void LIBUSB_CALL streaming_read_async_callback(struct libusb_transfer *tr
 
 
 typedef struct streaming {
-  int random;
   uint32_t frame_size;
   uint32_t num_frames;
   streaming_read_async_cb_t callback;
@@ -80,7 +79,6 @@ int USBDevice::streaming_open_sync()
   /* we are good here - create and initialize the streaming */
   streaming_t *t = (streaming_t *) malloc(sizeof(streaming_t));
   streaming_status = STREAMING_STATUS_READY;
-  t->random = 0;
   t->frame_size = 0;
   t->num_frames = 0;
   t->callback = 0;
@@ -154,7 +152,6 @@ int USBDevice::streaming_open_async(uint32_t frame_size,
   /* we are good here - create and initialize the streaming */
   streaming_t *t = (streaming_t *) malloc(sizeof(streaming_t));
   streaming_status = STREAMING_STATUS_READY;
-  t->random = 0;
   t->frame_size = frame_size;
   t->num_frames = num_frames;
   t->callback = callback;
@@ -205,13 +202,6 @@ void USBDevice::streaming_close()
   free(streaming_obj);
   streaming_obj = nullptr;
   return;
-}
-
-
-int USBDevice::streaming_set_random(int random)
-{
-  streaming_obj->random = random;
-  return 0;
 }
 
 
@@ -324,17 +314,6 @@ int USBDevice::streaming_read_sync(uint8_t *data, int length, int *transferred)
     return -1;
   }
 
-  /* remove ADC randomization */
-  if (streaming_obj->random) {
-    uint16_t *samples = (uint16_t *) data;
-    int n = *transferred / 2;
-    for (int i = 0; i < n; ++i) {
-      if (samples[i] & 1) {
-        samples[i] ^= 0xfffe;
-      }
-    }
-  }
-
   return 0;
 }
 
@@ -348,16 +327,6 @@ void LIBUSB_CALL USBDevice::streaming_read_async_callback(struct libusb_transfer
     case LIBUSB_TRANSFER_COMPLETED:
       /* success!!! */
       if (t->streaming_status == STREAMING_STATUS_STREAMING) {
-        /* remove ADC randomization */
-        if (t->streaming_obj->random) {
-          uint16_t *samples = (uint16_t *) transfer->buffer;
-          int n = transfer->actual_length / 2;
-          for (int i = 0; i < n; ++i) {
-            if (samples[i] & 1) {
-              samples[i] ^= 0xfffe;
-            }
-          }
-        }
         t->streaming_obj->callback(transfer->actual_length, transfer->buffer,
                        t->streaming_obj->callback_context);
         ret = libusb_submit_transfer(transfer);

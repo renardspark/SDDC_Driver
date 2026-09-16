@@ -71,7 +71,6 @@ class USBDevice
                       void *callback_context);
     int streaming_framesize();
     void streaming_close();
-    int streaming_set_random(int random);
     int streaming_start();
     int streaming_stop();
     int streaming_reset_status();
