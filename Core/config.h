@@ -97,7 +97,6 @@
 	#define TraceExtremePrintln(tag, fmt, ...)
 #endif
 
-#define SWVERSION           "1.0.0"
 #define SWNAME				"SDDC_Driver"
 
 

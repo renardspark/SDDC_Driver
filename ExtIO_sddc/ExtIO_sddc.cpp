@@ -335,7 +335,7 @@ int EXTIO_API StartHWdbl(double LOfreq)
 		uint8_t hb, lb;
 		hb = fw >> 8;
 		lb = (uint8_t) fw;
-		sprintf(ebuffer, "%s v%s (%s) | %s ", SWNAME, SWVERSION, kGitHash, radio.getHardwareName());
+		sprintf(ebuffer, "%s v%s (%s) | %s ", SWNAME, GIT_VERSION, kGitHash, radio.getHardwareName());
 		SetWindowText(h_dialog, ebuffer);
 		EXTIO_STATUS_CHANGE(TAG, pfnCallback, extHw_RUNNING);
 	}

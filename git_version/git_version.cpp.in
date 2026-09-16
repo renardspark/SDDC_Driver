@@ -1,2 +1,3 @@
 #include "git_version.h"
 const char *kGitHash = "@GIT_HASH@";
+const char *GIT_VERSION = "@GIT_VERSION@";
