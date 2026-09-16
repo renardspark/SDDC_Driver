@@ -77,7 +77,7 @@ fft_mt_r2iq::~fft_mt_r2iq()
 		return;
 
 	// --- Wisdom files --- //
-	fftwf_export_wisdom_to_filename("wisdom");
+	fftwf_export_wisdom_to_filename("sddc_driver.wisdom");
 	fftwf_forget_wisdom();
 
 	for (int d = 0; d < NDECIDX; d++)
@@ -182,7 +182,7 @@ void fft_mt_r2iq::Init(float gain, ringbuffer<int16_t> *input, ringbuffer<float>
 
 
 
-	fftwf_import_wisdom_from_filename("wisdom");
+	fftwf_import_wisdom_from_filename("sddc_driver.wisdom");
 
 	// Get the processor count
 	processor_count = std::thread::hardware_concurrency();
