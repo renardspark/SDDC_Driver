@@ -17,6 +17,8 @@
 
 #include "git_version.h"
 
+using namespace std;
+
 #define TAG "ExtIO_sddc"
 
 #define   snprintf	_snprintf
@@ -60,8 +62,6 @@ RadioHandler radio;
 // Dialog callback
 
 HWND h_dialog = NULL;
-
-DevContext  devicelist; // list of FX3 devices
 
 SplashWindow  splashW;
 
@@ -200,22 +200,14 @@ bool __declspec(dllexport) __stdcall InitHW(char *name, char *model, int& type)
 #endif
 		EnterFunction();  // now works
 
-		auto Fx3 = CreateUsbHandler();
-		unsigned char idx = 0;
 		int selected = 0;
 		vector<SDDC::DeviceItem> device_list = RadioHandler::GetDeviceList();
-		for(int i = 0; i < device_list.size(); i++)
-		{
-			strncpy(devicelist.dev[i], device_list[i].product.c_str(), MAXDEVSTRLEN);
-		}
-		devicelist.numdev = device_list.size();
-		if (device_list.size() >= 1){	
-			selected = DialogBoxParam(hInst, MAKEINTRESOURCE(IDD_SELECTDEVICE), NULL, DlgSelectDevice, (LPARAM) &devicelist);
+		if (device_list.size() >= 1) {
+			selected = DialogBoxParam(hInst, MAKEINTRESOURCE(IDD_SELECTDEVICE), NULL, DlgSelectDevice, NULL);
 		}
 		DebugPrintln(TAG, "selected %d", selected);
-		idx = selected;
 
-		gbInitHW = radio.Init(device_list[idx]) == ERR_SUCCESS; // Check if it there hardware
+		gbInitHW = radio.Init(device_list[selected]) == ERR_SUCCESS; // Check if it there hardware
 		radio.AttachIQ(Callback);
 	
 #ifdef _DEBUG

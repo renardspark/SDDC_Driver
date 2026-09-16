@@ -89,7 +89,7 @@ public:
         return buffers[(read_index.load() + max_count + offset) % max_count].data();
     }
 
-    void push(vector<T> arr)
+    void push(std::vector<T> arr)
     {
         WaitUntilNotFull();
 
@@ -108,13 +108,13 @@ public:
         writeCount++;
     }
 
-    vector<T> pop()
+    std::vector<T> pop()
     {
         WaitUntilNotEmpty();
 
         std::unique_lock<std::mutex> lk(mutex);
 
-        vector<T> vec = buffers[read_index];
+        std::vector<T> vec = buffers[read_index];
 
         read_index = (read_index + 1) % max_count;
         blocks_available--;
@@ -171,9 +171,9 @@ public:
         }
     }
 
-    volatile atomic<size_t> read_index;
-    volatile atomic<size_t> write_index;
-    volatile atomic<size_t> blocks_available;
+    volatile std::atomic<size_t> read_index;
+    volatile std::atomic<size_t> write_index;
+    volatile std::atomic<size_t> blocks_available;
 
 private:
     int emptyCount;
@@ -187,5 +187,5 @@ private:
 
     int block_size = 0;
 
-    array<vector<T>, max_count> buffers;
+    std::array<std::vector<T>, max_count> buffers;
 };

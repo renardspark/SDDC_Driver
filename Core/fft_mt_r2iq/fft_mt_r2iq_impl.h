@@ -23,14 +23,14 @@
     plan_freq2time = &plan_freq2time_per_decimation[decimation];
     int decimate_count = 0;
 
-    vector<float> iq_output(inputbuffer_block_size);
+    std::vector<float> iq_output(inputbuffer_block_size);
     size_t output_buffer_offset = 0;
 
     // Pointer to the current input block
-    vector<int16_t> input_current_block;
+    std::vector<int16_t> input_current_block;
     // Pointer to the end of the previous input block minus BASE_FFT_SCRAP_SIZE
     // (input_previous_block + inputbuffer_block_size - BASE_FFT_SCRAP_SIZE)
-    vector<int16_t> last_block_end(BASE_FFT_SCRAP_SIZE);
+    std::vector<int16_t> last_block_end(BASE_FFT_SCRAP_SIZE);
 
     while(r2iqOn)
     {
@@ -81,7 +81,7 @@
             );
         }
 
-        last_block_end = vector<int16_t>(
+        last_block_end = std::vector<int16_t>(
             input_current_block.data() + inputbuffer_block_size - BASE_FFT_SCRAP_SIZE,
             input_current_block.data() + inputbuffer_block_size
         );

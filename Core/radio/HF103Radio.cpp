@@ -21,6 +21,8 @@
 
 #include "RadioHardware.h"
 
+using namespace std;
+
 const char TAG[] = "HF103Radio";
 
 HF103Radio::HF103Radio(fx3class* fx3)

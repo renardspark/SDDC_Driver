@@ -22,8 +22,9 @@
 #include "libsddc.h"
 #include "config.h"
 #include "RadioHandler.h"
-
 #include <cstring>
+
+using namespace std;
 
 // libsddc handler
 struct libsddc_handler

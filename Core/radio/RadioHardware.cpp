@@ -21,6 +21,8 @@
 #include "RadioHardware.h"
 #include <cstdio>
 
+using namespace std;
+
 #define TAG "RadioHardware"
 
 sddc_rf_mode_t RadioHardware::GetRFMode()

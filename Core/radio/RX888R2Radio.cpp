@@ -21,6 +21,8 @@
 
 #include "RadioHardware.h"
 
+using namespace std;
+
 #define ADC_SAMPLE_RATE_MIN 0
 #define ADC_SAMPLE_RATE_MAX 130000000
 #define R828D_FREQ (16000000) // R820T reference frequency

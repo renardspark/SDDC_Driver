@@ -21,6 +21,8 @@
 
 #include "RadioHardware.h"
 
+using namespace std;
+
 #define R820T_FREQ (32000000)	// R820T reference frequency
 #define R820T2_IF_CARRIER (4570000)
 

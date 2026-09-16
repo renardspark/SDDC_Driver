@@ -11,8 +11,6 @@
 #include "usb_device.h"
 #include "../../dsp/ringbuffer.h"
 
-using namespace std;
-
 class fx3handler : public fx3class
 {
 public:
@@ -28,7 +26,7 @@ public:
 	void StartStream(ringbuffer<int16_t>& input) override;
 	void StopStream() override;
 	size_t GetDeviceListLength() override;
-	vector<SDDC::DeviceItem> GetDeviceList() override;
+	std::vector<SDDC::DeviceItem> GetDeviceList() override;
 
 private:
 	bool Close(void);

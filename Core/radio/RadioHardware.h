@@ -28,8 +28,6 @@
 #include <vector>
 #include <array>
 
-using namespace std;
-
 class RadioHardware {
     public:
         RadioHardware(fx3class* fx3): Fx3(fx3) {}
@@ -43,7 +41,7 @@ class RadioHardware {
         // --- ADC --- //
         uint32_t    GetADCSampleRate();
         sddc_err_t  SetADCSampleRate(uint32_t samplefreq);
-        virtual const array<float, 2> GetADCSampleRateLimits() = 0;
+        virtual const std::array<float, 2> GetADCSampleRateLimits() = 0;
 
         // --- Bias T --- //
         bool        GetBiasT_HF ();
@@ -92,14 +90,14 @@ class RadioHardware {
         virtual uint32_t    GetTunerFrequency_VHF() = 0;
 
         // --- RF settings --- //
-        virtual vector<float> GetRFSteps_HF () = 0;
-        virtual vector<float> GetRFSteps_VHF() = 0;
+        virtual std::vector<float> GetRFSteps_HF () = 0;
+        virtual std::vector<float> GetRFSteps_VHF() = 0;
         virtual sddc_err_t SetRFAttenuation_HF (size_t attIndex) = 0;
         virtual sddc_err_t SetRFAttenuation_VHF(uint16_t attIndex) = 0;
 
         // --- IF settings --- //
-        virtual vector<float> GetIFSteps_HF () = 0;
-        virtual vector<float> GetIFSteps_VHF() = 0;
+        virtual std::vector<float> GetIFSteps_HF () = 0;
+        virtual std::vector<float> GetIFSteps_VHF() = 0;
         virtual sddc_err_t SetIFGain_HF  (size_t attIndex) = 0;
         virtual sddc_err_t SetIFGain_VHF (size_t attIndex) = 0;
 
@@ -133,7 +131,7 @@ class BBRF103Radio : public RadioHardware {
         const char* GetName() override { return "BBRF103"; }
         float getGain() override { return BBRF103_GAINFACTOR; }
 
-        const array<float, 2> GetADCSampleRateLimits() override;
+        const std::array<float, 2> GetADCSampleRateLimits() override;
 
         // --- Tuner --- //
         sddc_err_t  SetCenterFrequency_HF (uint32_t freq) override;
@@ -144,21 +142,21 @@ class BBRF103Radio : public RadioHardware {
         // --- RF settings --- //
         sddc_rf_mode_t GetBestRFMode(uint64_t freq) override;
         sddc_err_t SetRFMode(sddc_rf_mode_t mode) override;
-        vector<float> GetRFSteps_HF () override;
-        vector<float> GetRFSteps_VHF() override;
+        std::vector<float> GetRFSteps_HF () override;
+        std::vector<float> GetRFSteps_VHF() override;
         sddc_err_t SetRFAttenuation_HF (size_t attIndex) override;
         sddc_err_t SetRFAttenuation_VHF(uint16_t attIndex) override;
 
         // --- IF settings --- //
-        vector<float> GetIFSteps_HF () override;
+        std::vector<float> GetIFSteps_HF () override;
         sddc_err_t SetIFGain_HF (size_t attIndex) override;
-        vector<float> GetIFSteps_VHF() override;
+        std::vector<float> GetIFSteps_VHF() override;
         sddc_err_t SetIFGain_VHF (size_t attIndex) override;
 
     private:
-        static const vector<float> rf_steps_vhf;
-        static const vector<float> rf_steps_hf;
-        static const vector<float> if_steps_vhf;
+        static const std::vector<float> rf_steps_vhf;
+        static const std::vector<float> rf_steps_hf;
+        static const std::vector<float> if_steps_vhf;
 };
 
 class RX888Radio : public BBRF103Radio {
@@ -174,7 +172,7 @@ class RX888R2Radio : public RadioHardware {
         const char* GetName() override { return "RX888 mkII"; }
         float getGain() override { return RX888mk2_GAINFACTOR; }
 
-        const array<float, 2> GetADCSampleRateLimits() override;
+        const std::array<float, 2> GetADCSampleRateLimits() override;
         
         sddc_err_t  SetCenterFrequency_HF (uint32_t freq) override;
         sddc_err_t  SetCenterFrequency_VHF(uint32_t freq) override;
@@ -184,22 +182,22 @@ class RX888R2Radio : public RadioHardware {
         // --- RF settings --- //
         sddc_rf_mode_t GetBestRFMode(uint64_t freq) override;
         sddc_err_t SetRFMode(sddc_rf_mode_t mode) override;
-        vector<float> GetRFSteps_HF() override;
-        vector<float> GetRFSteps_VHF() override;
+        std::vector<float> GetRFSteps_HF() override;
+        std::vector<float> GetRFSteps_VHF() override;
         sddc_err_t SetRFAttenuation_HF(size_t attIndex) override;
         sddc_err_t SetRFAttenuation_VHF(uint16_t attIndex) override;
 
         // --- IF settings --- //
-        vector<float> GetIFSteps_HF () override;
-        vector<float> GetIFSteps_VHF() override;
+        std::vector<float> GetIFSteps_HF () override;
+        std::vector<float> GetIFSteps_VHF() override;
         sddc_err_t SetIFGain_HF  (size_t attIndex) override;
         sddc_err_t SetIFGain_VHF (size_t attIndex) override;
 
     private:
-        vector<float> rf_steps_hf = vector<float>(64, 0);
-        vector<float> if_steps_hf = vector<float>(127, 0);
-        static const vector<float> rf_steps_vhf;
-        static const vector<float> if_steps_vhf;
+        std::vector<float> rf_steps_hf = std::vector<float>(64, 0);
+        std::vector<float> if_steps_hf = std::vector<float>(127, 0);
+        static const std::vector<float> rf_steps_vhf;
+        static const std::vector<float> if_steps_vhf;
 };
 
 class RX888R3Radio : public RadioHardware {
@@ -208,7 +206,7 @@ class RX888R3Radio : public RadioHardware {
         const char* GetName() override { return "RX888 mkIII"; }
         float getGain() override { return RX888mk2_GAINFACTOR; }
 
-        const array<float, 2> GetADCSampleRateLimits() override;
+        const std::array<float, 2> GetADCSampleRateLimits() override;
 
         // --- Tuner --- //
         sddc_err_t  SetCenterFrequency_HF (uint32_t freq) override;
@@ -219,23 +217,23 @@ class RX888R3Radio : public RadioHardware {
         // --- RF settings --- //
         sddc_rf_mode_t GetBestRFMode(uint64_t freq) override;
         sddc_err_t SetRFMode(sddc_rf_mode_t mode) override;
-        vector<float> GetRFSteps_HF () override;
-        vector<float> GetRFSteps_VHF() override;
+        std::vector<float> GetRFSteps_HF () override;
+        std::vector<float> GetRFSteps_VHF() override;
         sddc_err_t SetRFAttenuation_HF (size_t attIndex) override;
         sddc_err_t SetRFAttenuation_VHF(uint16_t attIndex) override;
 
         // --- IF settings --- //
-        vector<float> GetIFSteps_HF () override;
+        std::vector<float> GetIFSteps_HF () override;
         sddc_err_t SetIFGain_HF  (size_t attIndex) override;
-        vector<float> GetIFSteps_VHF() override;
+        std::vector<float> GetIFSteps_VHF() override;
         sddc_err_t SetIFGain_VHF (size_t attIndex) override;
 
     private:
 
-        vector<float>  rf_steps_hf;
-        vector<float>  if_steps_hf;
-        static const vector<float> rf_steps_vhf;
-        static const vector<float> if_steps_vhf;
+        std::vector<float>  rf_steps_hf;
+        std::vector<float>  if_steps_hf;
+        static const std::vector<float> rf_steps_vhf;
+        static const std::vector<float> if_steps_vhf;
 
         uint32_t freqLO_VHF_offset = 0;
 };
@@ -246,7 +244,7 @@ class RX999Radio : public RadioHardware {
         const char* GetName() override { return "RX999"; }
         float getGain() override { return RX888_GAINFACTOR; }
 
-        const array<float, 2> GetADCSampleRateLimits() override;
+        const std::array<float, 2> GetADCSampleRateLimits() override;
 
         // --- Tuner --- //
         sddc_err_t  SetCenterFrequency_HF (uint32_t freq) override;
@@ -257,19 +255,19 @@ class RX999Radio : public RadioHardware {
         // --- RF settings --- //
         sddc_rf_mode_t GetBestRFMode(uint64_t freq) override;
         sddc_err_t SetRFMode(sddc_rf_mode_t mode) override;
-        vector<float> GetRFSteps_HF () override;
-        vector<float> GetRFSteps_VHF() override;
+        std::vector<float> GetRFSteps_HF () override;
+        std::vector<float> GetRFSteps_VHF() override;
         sddc_err_t SetRFAttenuation_HF (size_t attIndex) override;
         sddc_err_t SetRFAttenuation_VHF(uint16_t attIndex) override;
 
         // --- IF settings --- //
-        vector<float> GetIFSteps_HF () override;
+        std::vector<float> GetIFSteps_HF () override;
         sddc_err_t SetIFGain_HF  (size_t attIndex) override;
-        vector<float> GetIFSteps_VHF() override;
+        std::vector<float> GetIFSteps_VHF() override;
         sddc_err_t SetIFGain_VHF (size_t attIndex) override;
 
     private:
-        vector<float> if_steps_hf;
+        std::vector<float> if_steps_hf;
 };
 
 class HF103Radio : public RadioHardware {
@@ -278,7 +276,7 @@ class HF103Radio : public RadioHardware {
         const char* GetName() override { return "HF103"; }
         float getGain() override { return HF103_GAINFACTOR; }
 
-        const array<float, 2> GetADCSampleRateLimits() override;
+        const std::array<float, 2> GetADCSampleRateLimits() override;
 
         // --- Tuner --- //
         sddc_err_t  SetCenterFrequency_HF (uint32_t freq) override;
@@ -289,20 +287,20 @@ class HF103Radio : public RadioHardware {
         // --- RF settings --- //
         sddc_rf_mode_t GetBestRFMode(uint64_t freq) override;
         sddc_err_t SetRFMode(sddc_rf_mode_t mode) override;
-        vector<float> GetRFSteps_HF () override;
-        vector<float> GetRFSteps_VHF() override;
+        std::vector<float> GetRFSteps_HF () override;
+        std::vector<float> GetRFSteps_VHF() override;
         sddc_err_t SetRFAttenuation_HF (size_t attIndex) override;
         sddc_err_t SetRFAttenuation_VHF(uint16_t attIndex) override;
 
         // --- IF settings --- //
-        vector<float> GetIFSteps_HF () override;
+        std::vector<float> GetIFSteps_HF () override;
         sddc_err_t SetIFGain_HF  (size_t attIndex) override;
-        vector<float> GetIFSteps_VHF() override;
+        std::vector<float> GetIFSteps_VHF() override;
         sddc_err_t SetIFGain_VHF (size_t attIndex) override;
 
     private:
         static const int step_size = 64;
-        vector<float> rf_steps_hf;
+        std::vector<float> rf_steps_hf;
 };
 
 class RXLucyRadio : public RadioHardware {
@@ -311,7 +309,7 @@ class RXLucyRadio : public RadioHardware {
         const char* GetName() override { return "Lucy"; }
         float getGain() override { return HF103_GAINFACTOR; }
 
-        const array<float, 2> GetADCSampleRateLimits() override;
+        const std::array<float, 2> GetADCSampleRateLimits() override;
 
         // --- Tuner --- //
         sddc_err_t  SetCenterFrequency_HF (uint32_t freq) override;
@@ -322,20 +320,20 @@ class RXLucyRadio : public RadioHardware {
         // --- RF settings --- //
         sddc_rf_mode_t GetBestRFMode(uint64_t freq) override;
         sddc_err_t SetRFMode(sddc_rf_mode_t mode) override;
-        vector<float> GetRFSteps_HF () override;
-        vector<float> GetRFSteps_VHF() override;
+        std::vector<float> GetRFSteps_HF () override;
+        std::vector<float> GetRFSteps_VHF() override;
         sddc_err_t SetRFAttenuation_HF (size_t attIndex) override;
         sddc_err_t SetRFAttenuation_VHF(uint16_t attIndex) override;
 
         // --- IF settings --- //
-        vector<float> GetIFSteps_HF () override;
+        std::vector<float> GetIFSteps_HF () override;
         sddc_err_t SetIFGain_HF  (size_t attIndex) override;
-        vector<float> GetIFSteps_VHF() override;
+        std::vector<float> GetIFSteps_VHF() override;
         sddc_err_t SetIFGain_VHF (size_t attIndex) override;
 
     private:
-        vector<float> rf_steps_hf;
-        vector<float> if_steps_hf;
+        std::vector<float> rf_steps_hf;
+        std::vector<float> if_steps_hf;
 };
 
 class DummyRadio : public RadioHardware {
@@ -344,7 +342,7 @@ public:
     const char* GetName() override { return "Dummy"; }
     float getGain() override { return 0; }
 
-    const array<float, 2> GetADCSampleRateLimits() override { return array<float, 2>{ 1000000, 64000000 }; };
+    const std::array<float, 2> GetADCSampleRateLimits() override { return std::array<float, 2>{ 1000000, 64000000 }; };
 
     sddc_rf_mode_t GetBestRFMode(uint64_t) override { return HFMODE; }
     sddc_err_t SetRFMode(sddc_rf_mode_t) override { return ERR_SUCCESS; }
@@ -354,15 +352,15 @@ public:
     uint32_t    GetTunerFrequency_HF() override { return 0; };
     uint32_t    GetTunerFrequency_VHF() override { return 0; };
 
-    vector<float> GetRFSteps_HF () override { return vector<float>(); };
-    vector<float> GetRFSteps_VHF() override { return vector<float>(); };
+    std::vector<float> GetRFSteps_HF () override { return std::vector<float>(); };
+    std::vector<float> GetRFSteps_VHF() override { return std::vector<float>(); };
     sddc_err_t SetRFAttenuation_HF (size_t) override { return ERR_SUCCESS; };
     sddc_err_t SetRFAttenuation_VHF(uint16_t) override { return ERR_SUCCESS; };
 
     // --- IF settings --- //
-    vector<float> GetIFSteps_HF () override { return vector<float>(); };
+    std::vector<float> GetIFSteps_HF () override { return std::vector<float>(); };
     sddc_err_t SetIFGain_HF  (size_t) override { return ERR_SUCCESS; };
-    vector<float> GetIFSteps_VHF() override { return vector<float>(); };
+    std::vector<float> GetIFSteps_VHF() override { return std::vector<float>(); };
     sddc_err_t SetIFGain_VHF (size_t) override { return ERR_SUCCESS; };
 };
 
