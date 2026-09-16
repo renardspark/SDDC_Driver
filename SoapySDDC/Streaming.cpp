@@ -9,6 +9,8 @@
 #include <cstring>
 #include "SoapySDDC.hpp"
 
+using namespace std;
+
 #define TAG "SoapySDDC_Streaming"
 
 std::vector<std::string> SoapySDDC::getStreamFormats(const int, const size_t) const

@@ -101,9 +101,9 @@ public:
     void writeSetting(const std::string &key, const std::string &value) override;
 
     // ----- Sensors ----- //
-    vector<string> listSensors() const override;
-    SoapySDR::ArgInfo getSensorInfo(const string &key) const override;
-    string readSensor(const string &key) const override;
+    std::vector<std::string> listSensors() const override;
+    SoapySDR::ArgInfo getSensorInfo(const std::string &key) const override;
+    std::string readSensor(const std::string &key) const override;
     // ----- //
 
 
