@@ -56,7 +56,6 @@ void usleep(__int64 usec)
 #include "usb_device.h"
 #include "usb_device_internals.h"
 #include "ezusb.h"
-#include "logging.h"
 #include "../../config.h"
 
 using namespace std;
@@ -88,14 +87,14 @@ USBDevice::USBDevice()
 {
   int ret = libusb_init_context(&usb_ctx, /*options=*/nullptr, /*num_options=*/0);
   if(ret < 0) {
-    USB_ERROR_PRINTLN(TAG, ret);
+    ErrorPrintln(TAG, "Failed to initialize USB context: %s", libusb_strerror(ret));
     throw runtime_error(format("{} ({}:{}) ", __FUNCTION__, __FILE__, __LINE__) + libusb_error_name(ret) + " " + libusb_strerror(ret));
   }
 
   #ifdef _DEBUG
     ret = libusb_set_option(usb_ctx, LIBUSB_OPTION_LOG_LEVEL, LIBUSB_LOG_LEVEL_INFO);
     if(ret < 0) {
-      USB_ERROR_PRINTLN(TAG, ret);
+      ErrorPrintln(TAG, "Failed to set libusb log level: %s", libusb_strerror(ret));
       throw runtime_error(format("{} ({}:{}) ", __FUNCTION__, __FILE__, __LINE__) + libusb_error_name(ret) + " " + libusb_strerror(ret));
     }
   #endif
@@ -343,7 +342,7 @@ int USBDevice::control(uint8_t request, uint16_t value,
                                     request, value, index, data, length,
                                     timeout);
       if (ret < 0) {
-        USB_ERROR_PRINTLN(TAG, ret);
+        ErrorPrintln(TAG, "Failed to send USB command: %s", libusb_strerror(ret));
         return -1;
       }
   }
@@ -355,7 +354,7 @@ int USBDevice::control(uint8_t request, uint16_t value,
       // LIBUSB_ERROR_PIPE indicates that the device voluntarily closed
       // the connection, hence not an error
       if (ret < 0 && ret != LIBUSB_ERROR_PIPE) {
-        USB_ERROR_PRINTLN(TAG, ret);
+        ErrorPrintln(TAG, "Failed to send USB command: %s", libusb_strerror(ret));
         return -1;
       }
   }
@@ -471,7 +470,7 @@ int USBDevice::list_endpoints(struct libusb_endpoint_descriptor endpoints[],
   struct libusb_config_descriptor *config;
   int ret = libusb_get_active_config_descriptor(device, &config);
   if (ret < 0) {
-    USB_ERROR_PRINTLN(TAG, ret);
+    ErrorPrintln(TAG, "Failed to list endpoints: %s", libusb_strerror(ret));
     return -1;
   }
 
@@ -495,7 +494,7 @@ int USBDevice::list_endpoints(struct libusb_endpoint_descriptor endpoints[],
 
         //printf("PktSize=%d\n", endpoint->wMaxPacketSize * (endpoint_ss_companion->bMaxBurst + 1));
         if (ret < 0 && ret != LIBUSB_ERROR_NOT_FOUND) {
-          USB_ERROR_PRINTLN(TAG, ret);
+          ErrorPrintln(TAG, "Failed to list endpoints: %s", libusb_strerror(ret));
           return -1;
         }
         if (ret == 0) {

@@ -44,7 +44,6 @@ extern void usleep(__int64 usec);
 
 #include "usb_device.h"
 #include "usb_device_internals.h"
-#include "logging.h"
 #include "../../config.h"
 
 using namespace std;
@@ -83,7 +82,7 @@ int USBDevice::streaming_open_sync()
 {
   /* we must have a bulk in device to transfer data from */
   if (bulk_in_endpoint_address == 0) {
-    log_error("no USB bulk in endpoint found", __func__, __FILE__, __LINE__);
+    ErrorPrintln(TAG, "No USB Bulk IN endpoint found");
     return -1;
   }
 
@@ -115,7 +114,7 @@ int USBDevice::streaming_open_async(uint32_t frame_size,
 
   /* we must have a bulk in device to transfer data from */
   if (bulk_in_endpoint_address == 0) {
-    log_error("no USB bulk in endpoint found", __func__, __FILE__, __LINE__);
+    ErrorPrintln(TAG, "No USB Bulk IN endpoint found");
     return -1;
   }
 
@@ -147,7 +146,7 @@ int USBDevice::streaming_open_async(uint32_t frame_size,
     #endif
 
     if (frames[i] == 0) {
-      log_error("libusb_dev_mem_alloc() failed", __func__, __FILE__, __LINE__);
+      ErrorPrintln(TAG, "Failed to allocate streaming buffer");
       for (uint32_t j = 0; j < i; j++) {
         #ifdef __linux__
         libusb_dev_mem_free(dev_handle, frames[j], frame_size);
@@ -243,7 +242,7 @@ int USBDevice::streaming_start()
   for (uint32_t i = 0; i < streaming_obj->num_frames; ++i) {
     int ret = libusb_submit_transfer(transfers[i]);
     if (ret < 0) {
-      log_usb_error(ret, __func__, __FILE__, __LINE__);
+      ErrorPrintln(TAG, "Failed to submit transfer: %s", libusb_strerror(ret));
       streaming_obj->status = STREAMING_STATUS_FAILED;
       return -1;
     }
@@ -273,7 +272,7 @@ int USBDevice::streaming_stop()
   while (streaming_obj->active_transfers > 0) {
     int ret = libusb_handle_events_timeout_completed(usb_ctx, &noblock, 0);
     if (ret < 0) {
-      log_usb_error(ret, __func__, __FILE__, __LINE__);
+      ErrorPrintln(TAG, "Failed to handle events: %s", libusb_strerror(ret));
       streaming_obj->status = STREAMING_STATUS_FAILED;
     }
     usleep(100);
@@ -286,7 +285,7 @@ int USBDevice::streaming_stop()
       if (ret == LIBUSB_ERROR_NOT_FOUND)  {
         continue;
       }
-      log_usb_error(ret, __func__, __FILE__, __LINE__);
+      ErrorPrintln(TAG, "Failed to cancel transfer: %s", libusb_strerror(ret));
       streaming_obj->status = STREAMING_STATUS_FAILED;
     }
   }
@@ -330,7 +329,7 @@ int USBDevice::streaming_read_sync(uint8_t *data, int length, int *transferred)
                                  bulk_in_endpoint_address,
                                  data, length, transferred, BULK_XFER_TIMEOUT);
   if (ret < 0) {
-    log_usb_error(ret, __func__, __FILE__, __LINE__);
+    ErrorPrintln(TAG, "Failed to initiate bulk transfer: %s", libusb_strerror(ret));
     return -1;
   }
 
@@ -374,7 +373,7 @@ static void LIBUSB_CALL streaming_read_async_callback(struct libusb_transfer *tr
         if (ret == 0) {
           return;
         }
-        log_usb_error(ret, __func__, __FILE__, __LINE__);
+        ErrorPrintln(TAG, "Failed to submit transfer: %s", libusb_strerror(ret));
       }
       break;
     case LIBUSB_TRANSFER_CANCELLED:
@@ -384,14 +383,14 @@ static void LIBUSB_CALL streaming_read_async_callback(struct libusb_transfer *tr
     case LIBUSB_TRANSFER_TIMED_OUT:
       // Time out error isn't necessarily bad if the SDR is configured on a slow sample rate
       // FIXME: This isn't perfect as the number of transfer will not increase if a faster sample rate is requested afterwards
-      log_usb_warning(transfer->status, __func__, __FILE__, __LINE__);
+      WarnPrintln(TAG, "Transfer timed out: %s", libusb_strerror(transfer->status));
       t->active_transfers.fetch_sub(1);
       return;
     case LIBUSB_TRANSFER_ERROR:
     case LIBUSB_TRANSFER_STALL:
     case LIBUSB_TRANSFER_NO_DEVICE:
     case LIBUSB_TRANSFER_OVERFLOW:
-      log_usb_error(transfer->status, __func__, __FILE__, __LINE__);
+      ErrorPrintln(TAG, "%s", libusb_strerror(ret));
       break;
   }
 
@@ -405,7 +404,7 @@ static void LIBUSB_CALL streaming_read_async_callback(struct libusb_transfer *tr
       if (ret == LIBUSB_ERROR_NOT_FOUND) {
         continue;
       }
-      log_usb_error(ret, __func__, __FILE__, __LINE__);
+      ErrorPrintln(TAG, "Failed to cancel transfer: %s", libusb_strerror(ret));
     }
   }
   return;
