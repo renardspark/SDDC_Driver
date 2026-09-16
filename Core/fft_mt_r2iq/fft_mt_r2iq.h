@@ -18,7 +18,8 @@
 #define NDECIDX 7 // Number of decimation steps
 
 static const int BASE_FFT_SCRAP_SIZE = 2048;
-static const int BASE_FFT_SIZE = FFTN_R_ADC + BASE_FFT_SCRAP_SIZE;
+static const int BASE_FFT_USEFUL_SIZE = FFTN_R_ADC;
+static const int BASE_FFT_SIZE = BASE_FFT_USEFUL_SIZE + BASE_FFT_SCRAP_SIZE;
 static const int BASE_FFT_HALF_SIZE = BASE_FFT_SIZE / 2;
 
 struct r2iqThreadArg;

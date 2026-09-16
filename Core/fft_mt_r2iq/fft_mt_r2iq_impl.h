@@ -127,16 +127,27 @@
         // It also includes filtering and decimation
         for (int k = 0; k < ffts_per_blocks; k++)
         {
+            size_t start_address = k * BASE_FFT_USEFUL_SIZE;
+            size_t scrap_size = BASE_FFT_SCRAP_SIZE;
+            if(start_address + BASE_FFT_SIZE > inputbuffer_block_size + BASE_FFT_SCRAP_SIZE)
+            {
+                size_t new_address = (inputbuffer_block_size + BASE_FFT_SCRAP_SIZE) - BASE_FFT_SIZE;
+                scrap_size += start_address - new_address;
+                start_address = new_address;
+            }
+            scrap_size /= (deci_ratio*2);
+
             // core of fast convolution including filter and decimation
             //   main part is 'overlap-scrap' (IMHO better name for 'overlap-save'), see
             //   https://en.wikipedia.org/wiki/Overlap%E2%80%93save_method
             {
                 // FFT first stage: time to frequency, real to complex
-                // Input buffer: th->ADCinTime + k * (0.75 * BASE_FFT_SIZE)
+                // Input buffer: th->ADCinTime + k * (BASE_FFT_USEFUL_SIZE)
                 // Transformation size: BASE_FFT_SIZE
                 // Output buffer: th->ADCinFreq[]
                 // Output size: BASE_FFT_HALF_SIZE + 1
-                fftwf_execute_dft_r2c(plan_time2freq_r2c, th->ADCinTime + k * (BASE_FFT_SIZE - BASE_FFT_SCRAP_SIZE), th->ADCinFreq);
+
+                fftwf_execute_dft_r2c(plan_time2freq_r2c, th->ADCinTime + start_address, th->ADCinFreq);
 
                 // circular shift (mixing in full bins) and low/bandpass filtering (complex multiplication)
                 {
@@ -189,17 +200,26 @@
             //    with fine mixer - modifying the mixer frequency? (fs - fc)/fs
             //    (this would reduce one memory pass)
 
-            size_t len = (k+1) * fft_useful_size + output_buffer_offset > 32768 ? 32768 - (k * fft_useful_size + output_buffer_offset) : fft_useful_size;
+            // Last processing step, put data in the output buffer after removing the end (scrap)
+            // The part saved must be the beginning of the sample
+
+            // Use IFFT output from its beginning, unless the scrap has been
+            // made bigger to accomodate for the end of the frame
+            size_t begin = scrap_size-deci_fft_scrap_size;
+            size_t len = (fft_output_size - scrap_size);
+
 
             if (this->getSideband()) // lower sideband
             {
                 // mirror just by negating the imaginary Q of complex I/Q
-                copy<true>((fftwf_complex*)&iq_output.data()[(k * fft_useful_size + output_buffer_offset)*2], &th->inFreqTmp[0], len);
+                copy<true>((fftwf_complex*)&iq_output.data()[output_buffer_offset*2], &th->inFreqTmp[begin], len);
             }
             else // upper sideband
             {
-                copy<false>((fftwf_complex*)&iq_output.data()[(k * fft_useful_size + output_buffer_offset)*2], &th->inFreqTmp[0], len);
+                copy<false>((fftwf_complex*)&iq_output.data()[output_buffer_offset*2], &th->inFreqTmp[begin], len);
             }
+
+            output_buffer_offset += len;
         }
 
         decimate_count = (decimate_count + 1) & (deci_ratio - 1);
@@ -209,7 +229,7 @@
         }
         else
         {
-            output_buffer_offset += fft_output_half_size + fft_useful_size * (ffts_per_blocks-1);
+            //output_buffer_offset += fft_output_half_size + fft_useful_size * (ffts_per_blocks-1);
         }
     }
     return 0;

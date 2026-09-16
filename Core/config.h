@@ -100,7 +100,7 @@
 #define SWNAME				"SDDC_Driver"
 
 
-#define FFTN_R_ADC (8192)       // FFTN used for ADC real stream DDC  tested at  2048, 8192, 32768, 131072
+#define FFTN_R_ADC (8192-2048)       // FFTN used for ADC real stream DDC  tested at  2048, 8192, 32768, 131072
 
 // GAINFACTORS to be adjusted with lab reference source measured with HDSDR Smeter rms mode  
 #define BBRF103_GAINFACTOR 	(7.8e-8f)       // BBRF103

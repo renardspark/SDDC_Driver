@@ -175,8 +175,7 @@ void fft_mt_r2iq::Init(float gain, ringbuffer<int16_t> *input, ringbuffer<float>
 
 	// number of ffts needed to process one full buffer block
 	// including an overlap with the previous samples (required by the overlap-save method)
-	// Historically there was a "+ 1" here, but it triggers a rather catastrophic memory leak
-	ffts_per_blocks = inputbuffer_block_size / (BASE_FFT_SIZE - BASE_FFT_SCRAP_SIZE)+1;
+	ffts_per_blocks = std::ceil((float)inputbuffer_block_size / (BASE_FFT_SIZE - BASE_FFT_SCRAP_SIZE));
 	DebugPrintln(TAG, "Number of FFTs per blocks : %d", ffts_per_blocks);
 	DebugPrintln(TAG, "Effective FFT conversion : %d", ffts_per_blocks * (BASE_FFT_SIZE - BASE_FFT_SCRAP_SIZE));
 
@@ -246,7 +245,7 @@ void fft_mt_r2iq::Init(float gain, ringbuffer<int16_t> *input, ringbuffer<float>
 
 			// Buffer containing real samples of one block converted to float
 			// plus a scrap portion from the previous block for the overlap-save
-			th->ADCinTime = (float*)fftwf_malloc((inputbuffer_block_size + BASE_FFT_SCRAP_SIZE*2) * sizeof(float));
+			th->ADCinTime = (float*)fftwf_malloc((inputbuffer_block_size + BASE_FFT_SCRAP_SIZE) * sizeof(float));
 
 			th->ADCinFreq = (fftwf_complex*)fftwf_malloc(sizeof(fftwf_complex)*(BASE_FFT_HALF_SIZE + 1)); // 1024+1
 			th->inFreqTmp = (fftwf_complex*)fftwf_malloc(sizeof(fftwf_complex)*(BASE_FFT_HALF_SIZE));    // 1024
