@@ -111,7 +111,7 @@ int USBDevice::streaming_open_async(uint32_t frame_size,
                       uint32_t num_frames, streaming_read_async_cb_t callback,
                       void *callback_context)
 {
-  TracePrintln(TAG, "%ld, %ld, %p, %p", frame_size, num_frames, callback, callback_context);
+  TracePrintln(TAG, "%d, %d, %p, %p", frame_size, num_frames, callback, callback_context);
 
   /* we must have a bulk in device to transfer data from */
   if (bulk_in_endpoint_address == 0) {

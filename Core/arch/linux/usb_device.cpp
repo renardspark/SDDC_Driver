@@ -216,6 +216,7 @@ void USBDevice::open(USBDeviceInfo index, const char* image,
     }
 
     /* rescan USB to get a new device handle */
+    libusb_unref_device(device);
     libusb_close(dev_handle);
 
     /* wait unitl firmware is ready */
@@ -229,10 +230,9 @@ void USBDevice::open(USBDeviceInfo index, const char* image,
       return;
     }
 
-    libusb_unref_device(device);
-
     if (needs_firmware) {
       ErrorPrintln(TAG, "The USB device is still in boot loader mode");
+      libusb_unref_device(device);
       libusb_close(dev_handle);
       return;
     }
