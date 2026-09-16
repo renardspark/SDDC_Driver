@@ -470,16 +470,19 @@ INT_PTR CALLBACK DlgMainFn(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 INT_PTR CALLBACK DlgSelectDevice(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	int selindex = 0;
-	DevContext* p_devicelist;
 
 	// check message type
 	switch (uMsg)
 	{
 	case WM_INITDIALOG:
-		p_devicelist = (DevContext*) lParam;
-		for (int i = 0; i < p_devicelist->numdev; i++) {
-			ListBox_AddString(GetDlgItem(hWnd, IDC_LISTDEV), p_devicelist->dev[i]);
-		}
+		vector<SDDC::DeviceItem> device_list = RadioHandler::GetDeviceList();
+	    for(auto sddc_device: device_list)
+	    {
+	    	ListBox_AddString(
+	    		GetDlgItem(hWnd, IDC_LISTDEV),
+	    		sddc_device.product + " (" + sddc_device.serial_number + ")"
+	    	);
+	    }
 		break;
 
 	case WM_CTLCOLORDLG:
