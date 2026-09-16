@@ -38,6 +38,14 @@ typedef struct USBDeviceInfo {
   uint8_t usb_device_address;
 } USBDeviceInfo;
 
+enum StreamingStatus {
+  STREAMING_STATUS_OFF,
+  STREAMING_STATUS_READY,
+  STREAMING_STATUS_STREAMING,
+  STREAMING_STATUS_CANCELLED,
+  STREAMING_STATUS_FAILED = 0xff
+};
+
 typedef struct streaming streaming_t;
 
 typedef void (*streaming_read_async_cb_t)(uint32_t data_size, uint8_t *data,
@@ -78,11 +86,8 @@ class USBDevice
     libusb_device* findUSBDevice(USBDeviceInfo device_def, bool strict = true);
     libusb_device_handle* initializeUSBDevice(libusb_device *device);
     // --- //
-
-    streaming_t *streaming_obj = nullptr;
-
     
-    int completed = 0;
+    
     uint8_t bulk_in_endpoint_address = 0;
     uint16_t bulk_in_max_packet_size = 0;
     uint8_t bulk_in_max_burst = 0;
@@ -91,9 +96,13 @@ class USBDevice
       struct libusb_ss_endpoint_companion_descriptor ss_endpoints[],
       libusb_device *device);
 
-    
-
-
     // --- Streaming --- //
     struct libusb_transfer **transfers = nullptr;
+    streaming_t *streaming_obj = nullptr;
+
+    StreamingStatus streaming_status;
+
+    int completed = 0;
+
+    static void streaming_read_async_callback(struct libusb_transfer *transfer);
 };

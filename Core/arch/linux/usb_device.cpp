@@ -78,7 +78,8 @@ struct usb_device_id {
 
 static struct usb_device_id usb_device_ids[] = {
   { 0x04b4, 0x00f3, 1 },     /* Cypress / FX3 Boot-loader */
-  { 0x04b4, 0x00f1, 0 }      /* Cypress / FX3 Streamer Example */
+  { 0x04b4, 0x00f1, 0 },      /* Cypress / FX3 Streamer Example */
+  { 0x0781, 0x5581, 0 }
 };
 static int n_usb_device_ids = sizeof(usb_device_ids) / sizeof(usb_device_ids[0]);
 
