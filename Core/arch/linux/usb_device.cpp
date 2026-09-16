@@ -54,7 +54,6 @@ void usleep(__int64 usec)
 #endif
 
 #include "usb_device.h"
-#include "usb_device_internals.h"
 #include "ezusb.h"
 #include "../../config.h"
 
@@ -62,7 +61,7 @@ using namespace std;
 
 const char TAG[] = "usb_device";
 
-typedef struct usb_device usb_device_t;
+
 
 /* internal functions */
 static int load_image(libusb_device_handle *dev_handle,
@@ -313,7 +312,7 @@ void USBDevice::close()
 
 int USBDevice::handleEvents()
 {
-  return libusb_handle_events_completed(usb_ctx, &completed);
+  return libusb_handle_events_completed(usb_ctx, nullptr);
 }
 
 /**

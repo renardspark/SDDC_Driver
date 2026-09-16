@@ -51,6 +51,9 @@ typedef struct streaming streaming_t;
 typedef void (*streaming_read_async_cb_t)(uint32_t data_size, uint8_t *data,
                                           void *context);
 
+#define MAX_ENDPOINTS (16)
+#define BULK_XFER_TIMEOUT 5000 // timeout (in ms) for each bulk transfer
+
 
 class USBDevice
 {
@@ -96,12 +99,15 @@ class USBDevice
       libusb_device *device);
 
     // --- Streaming --- //
-    struct libusb_transfer **transfers = nullptr;
+    uint32_t concurrent_transfers;
+    std::vector<struct libusb_transfer*> transfers;
+    std::vector<uint8_t*> transfer_buffers;
     streaming_t *streaming_obj = nullptr;
 
     StreamingStatus streaming_status;
 
-    int completed = 0;
+    streaming_read_async_cb_t stream_callback;
+    void *stream_callback_context;
 
     static void streaming_read_async_callback(struct libusb_transfer *transfer);
 };
