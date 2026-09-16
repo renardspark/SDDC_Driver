@@ -283,7 +283,7 @@ sddc_err_t USBDevice::open(USBDeviceInfo device_def, const char* image,
     }
   }
   if (bulk_in_endpoint_address == 0) {
-    fprintf(stderr, "ERROR - bulk in endpoint not found\n");
+    ErrorPrintln(TAG, "No bulk IN endpoint found");
     libusb_release_interface(dev_handle, 0);
     libusb_close(dev_handle);
     return ERR_USB_NO_BULK_IN_ENDPOINT;

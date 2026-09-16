@@ -103,7 +103,7 @@ int USBDevice::streaming_open_async(uint32_t frame_size,
 
   /* we must have a bulk in device to transfer data from */
   if (bulk_in_endpoint_address == 0) {
-    ErrorPrintln(TAG, "No USB Bulk IN endpoint found");
+    ErrorPrintln(TAG, "No bulk IN endpoint found");
     return -1;
   }
 
@@ -114,9 +114,6 @@ int USBDevice::streaming_open_async(uint32_t frame_size,
     fprintf(stderr, "ERROR: maximum transfer size is 0. probably not connected at USB 3 port?!\n");
     return -1;
   }
-
-  int iso_packets_per_frame = frame_size / bulk_in_max_packet_size;
-  // fprintf(stderr, "frame_size = %u, iso_packets_per_frame = %d\n", (unsigned)frame_size, iso_packets_per_frame);
 
   if (frame_size % max_xfer_size != 0) {
     fprintf(stderr, "frame size must be a multiple of %d\n", max_xfer_size);
@@ -161,11 +158,17 @@ int USBDevice::streaming_open_async(uint32_t frame_size,
   /* populate the required libusb_transfer fields */
   transfers = (struct libusb_transfer **) malloc(num_frames * sizeof(struct libusb_transfer *));
   for (uint32_t i = 0; i < num_frames; ++i) {
-    transfers[i] = libusb_alloc_transfer(0);	// iso_packets_per_frame ?
-    libusb_fill_bulk_transfer(transfers[i], dev_handle,
-                              bulk_in_endpoint_address,
-                              frames[i], frame_size, (libusb_transfer_cb_fn)streaming_read_async_callback,
-                              this, BULK_XFER_TIMEOUT);
+    transfers[i] = libusb_alloc_transfer(0);
+    libusb_fill_bulk_transfer(
+      transfers[i],
+      dev_handle,
+      /*endpoint=*/bulk_in_endpoint_address,
+      /*buffer=*/frames[i],
+      /*length=*/frame_size,
+      /*callback=*/(libusb_transfer_cb_fn)streaming_read_async_callback,
+      /*user_data=*/this,
+      /*timeout=*/BULK_XFER_TIMEOUT
+    );
   }
   t->active_transfers = 0;
 
@@ -306,9 +309,11 @@ int USBDevice::streaming_reset_status()
 
 int USBDevice::streaming_read_sync(uint8_t *data, int length, int *transferred)
 {
-  int ret = libusb_bulk_transfer(dev_handle,
-                                 bulk_in_endpoint_address,
-                                 data, length, transferred, BULK_XFER_TIMEOUT);
+  int ret = libusb_bulk_transfer(
+    dev_handle,
+    bulk_in_endpoint_address,
+    data, length, transferred, BULK_XFER_TIMEOUT
+  );
   if (ret < 0) {
     ErrorPrintln(TAG, "Failed to initiate bulk transfer: %s", libusb_strerror(ret));
     return -1;
