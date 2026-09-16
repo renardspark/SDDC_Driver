@@ -14,6 +14,8 @@
 
 #include <windowsx.h>
 
+using namespace std;
+
 HWND hTabCtrlMain;
 UINT nSel = 0; //selected tab
 

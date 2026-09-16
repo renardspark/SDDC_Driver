@@ -17,6 +17,8 @@
 
 #include "git_version.h"
 
+using namespace std;
+
 #define TAG "ExtIO_sddc"
 
 #define   snprintf	_snprintf
