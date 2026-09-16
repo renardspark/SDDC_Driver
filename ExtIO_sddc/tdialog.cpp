@@ -474,16 +474,18 @@ INT_PTR CALLBACK DlgSelectDevice(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPa
 	// check message type
 	switch (uMsg)
 	{
-	case WM_INITDIALOG:
-		vector<SDDC::DeviceItem> device_list = RadioHandler::GetDeviceList();
-	    for(auto sddc_device: device_list)
-	    {
-	    	ListBox_AddString(
-	    		GetDlgItem(hWnd, IDC_LISTDEV),
-	    		sddc_device.product + " (" + sddc_device.serial_number + ")"
-	    	);
-	    }
-		break;
+		case WM_INITDIALOG:
+		{
+			vector<SDDC::DeviceItem> device_list = RadioHandler::GetDeviceList();
+		    for(auto sddc_device: device_list)
+		    {
+		    	ListBox_AddString(
+		    		GetDlgItem(hWnd, IDC_LISTDEV),
+		    		(sddc_device.product + " (" + sddc_device.serial_number + ")").c_str()
+		    	);
+		    }
+			break;
+		}
 
 	case WM_CTLCOLORDLG:
 	case WM_CTLCOLOREDIT:
