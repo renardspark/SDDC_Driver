@@ -43,7 +43,6 @@ extern void usleep(__int64 usec);
 #endif
 
 #include "usb_device.h"
-#include "../../config.h"
 
 using namespace std;
 

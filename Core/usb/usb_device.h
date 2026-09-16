@@ -21,7 +21,7 @@
 
 #pragma once
 
-#include "../../config.h"
+#include "../config.h"
 #include <libusb.h>
 #include <vector>
 #include <string>
@@ -109,5 +109,5 @@ class USBDevice
     streaming_read_async_cb_t stream_callback;
     void *stream_callback_context;
 
-    static void streaming_read_async_callback(struct libusb_transfer *transfer);
+    static void LIBUSB_CALL streaming_read_async_callback(struct libusb_transfer *transfer);
 };

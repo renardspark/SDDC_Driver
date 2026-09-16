@@ -17,7 +17,7 @@
 #include "config.h"
 #include "../Interface.h"
 #include "dsp/ringbuffer.h"
-#include "arch/linux/usb_device.h"
+#include "usb/usb_device.h"
 
 
 namespace SDDC {

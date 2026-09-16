@@ -55,7 +55,6 @@ void usleep(__int64 usec)
 
 #include "usb_device.h"
 #include "ezusb.h"
-#include "../../config.h"
 
 using namespace std;
 

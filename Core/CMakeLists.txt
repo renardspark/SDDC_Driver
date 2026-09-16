@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.13)
 
-file(GLOB SRC "*.cpp" "radio/*.cpp" "pffft/*.cpp" "fft_mt_r2iq/*.cpp" "dsp/*.cpp" "arch/linux/*.c" "arch/linux/*.cpp")
+file(GLOB SRC "*.cpp" "radio/*.cpp" "pffft/*.cpp" "fft_mt_r2iq/*.cpp" "dsp/*.cpp" "usb/*.c" "usb/*.cpp")
 
 if (MSVC)
     # Assume Windows/x86 target ;)
