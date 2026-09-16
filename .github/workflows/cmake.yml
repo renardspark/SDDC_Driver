@@ -22,7 +22,7 @@ jobs:
     name: build-firmware
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v7
 
     - name: Install libs
       # Some projects don't allow in-source building, so create a separate build directory
@@ -33,7 +33,7 @@ jobs:
       shell: bash
       run: make -C ./SDDC_FX3
 
-    - uses: actions/upload-artifact@v4
+    - uses: actions/upload-artifact@v7
       with:
         name: firmware
         path: ./SDDC_FX3/SDDC_FX3.img
@@ -47,7 +47,7 @@ jobs:
     needs: build-firmware
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v7
 
     - name: Install vcpkg dependencies
       run: cd c:\vcpkg ; git pull ; vcpkg install soapysdr:x64-windows
@@ -67,7 +67,7 @@ jobs:
       # The CMake binaries on the Github Actions machines are (as of this writing) 3.12
       run: cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=$BUILD_TYPE -G "Visual Studio 18 2026" -A Win32
 
-    - uses: actions/download-artifact@v4
+    - uses: actions/download-artifact@v8
       with:
         name: firmware
 
@@ -107,7 +107,7 @@ jobs:
       shell: powershell
       run: Compress-Archive -DestinationPath SDDC_EXTIO.ZIP -LiteralPath ${{runner.workspace}}/build/ExtIO_sddc/Release/ExtIO_SDDC.dll,${{runner.workspace}}/build/unittest/libfftw3f-3.dll,README.md
 
-    - uses: actions/upload-artifact@v4
+    - uses: actions/upload-artifact@v7
       with:
         name: ExtIO_Windows_x86
         path: SDDC_EXTIO.ZIP
@@ -120,7 +120,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v7
 
     - name: Install libs
       # Some projects don't allow in-source building, so create a separate build directory
@@ -159,12 +159,12 @@ jobs:
       shell: bash
       run: zip SDDC_SOAPY_Linux_x86_64.ZIP ${{runner.workspace}}/build/SoapySDDC/libSDDCSupport.so
 
-    - uses: actions/upload-artifact@v4
+    - uses: actions/upload-artifact@v7
       with:
         name: SoapySDDC_Linux_x86_64
         path: ${{runner.workspace}}/build/SoapySDDC/libSDDCSupport.so
 
-    - uses: actions/upload-artifact@v4
+    - uses: actions/upload-artifact@v7
       with:
         name: sddc-cli_Linux_x86_64
         path: ${{runner.workspace}}/build/sddc-cli/sddc-cli
@@ -181,7 +181,7 @@ jobs:
             arch: arm64
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Install dependencies
         run: |
@@ -216,7 +216,7 @@ jobs:
           fi
 
       - name: Upload SoapySDR Package
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: soapy-package-${{ matrix.arch }}
           path: ${{ runner.workspace }}/SDDC_SOAPY_OSX_${{ matrix.arch }}.zip
