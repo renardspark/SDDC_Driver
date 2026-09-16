@@ -9,6 +9,7 @@
 #include <condition_variable>
 #include <atomic>
 #include <vector>
+#include <limits>
 
 #include "../dsp/ringbuffer.h"
 
