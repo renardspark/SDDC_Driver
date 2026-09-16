@@ -35,8 +35,6 @@
 #include "fft_mt_r2iq/fft_mt_r2iq.h"
 #include "dsp/ringbuffer.h"
 
-using namespace std;
-
 class RadioHardware;
 
 enum {
@@ -71,7 +69,7 @@ public:
 	sddc_err_t		SetRFMode(sddc_rf_mode_t mode);
 
 	// --- ADC --- //
-	array<float, 2> GetADCSampleRateLimits();
+	std::array<float, 2> GetADCSampleRateLimits();
 	uint32_t	    GetADCSampleRate();
 	sddc_err_t	    SetADCSampleRate(uint32_t samplefreq);
 
@@ -80,13 +78,13 @@ public:
     sddc_err_t      SetCenterFrequency(uint32_t freq);
 
 	// --- RF/IF adjustments --- //
-	vector<float>   GetRFGainSteps(sddc_rf_mode_t mode = NOMODE);
-	array<float, 2> GetRFGainRange(sddc_rf_mode_t mode = NOMODE);
+	std::vector<float>   GetRFGainSteps(sddc_rf_mode_t mode = NOMODE);
+	std::array<float, 2> GetRFGainRange(sddc_rf_mode_t mode = NOMODE);
 	float           GetRFGain();
 	sddc_err_t      SetRFGain(float new_att);
 
-	vector<float>   GetIFGainSteps(sddc_rf_mode_t mode = NOMODE);
-	array<float, 2> GetIFGainRange(sddc_rf_mode_t mode = NOMODE);
+	std::vector<float>   GetIFGainSteps(sddc_rf_mode_t mode = NOMODE);
+	std::array<float, 2> GetIFGainRange(sddc_rf_mode_t mode = NOMODE);
 	float           GetIFGain();
 	sddc_err_t      SetIFGain(float new_gain);
 
@@ -126,7 +124,7 @@ public:
 
 	// --- Static functions --- //
 	static size_t GetDeviceListLength();
-	static vector<SDDC::DeviceItem> GetDeviceList();
+	static std::vector<SDDC::DeviceItem> GetDeviceList();
 
 protected:
 	fx3class *fx3;

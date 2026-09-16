@@ -20,6 +20,8 @@
 
 #include "RadioHardware.h"
 
+using namespace std;
+
 #define REFCLK_FREQ (27000000) // R820T reference frequency
 #define IF_FREQ (20000000)
 

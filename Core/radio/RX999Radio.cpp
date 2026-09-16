@@ -20,6 +20,8 @@
 
 #include "RadioHardware.h"
 
+using namespace std;
+
 #define ADC_FREQ (128u*1000*1000)
 #define IF_FREQ (ADC_FREQ / 4)
 

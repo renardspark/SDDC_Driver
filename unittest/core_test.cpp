@@ -7,6 +7,7 @@
 
 #include "RadioHandler.h"
 
+using namespace std;
 using namespace std::chrono;
 
 class fx3handler2 : public fx3class
