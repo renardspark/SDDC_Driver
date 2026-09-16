@@ -14,13 +14,15 @@ SoapySDR::KwargsList findSDDC(const SoapySDR::Kwargs&)
     vector<SoapySDR::Kwargs> results;
 
     vector<SDDC::DeviceItem> device_list = RadioHandler::GetDeviceList();
+    int count = 0;
     for(auto sddc_device: device_list)
     {
         SoapySDR::Kwargs soapy_device;
-        soapy_device["index"] = to_string(sddc_device.index);
+        soapy_device["index"] = count;
         soapy_device["label"] = string(sddc_device.product);
         soapy_device["serial"] = string(sddc_device.serial_number);
         results.push_back(soapy_device);
+        count++;
     }
 
     return results;

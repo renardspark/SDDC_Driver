@@ -21,18 +21,21 @@
 
 #pragma once
 
+#include "../../config.h"
 #include <libusb.h>
 #include <vector>
 #include <string>
 
 typedef struct USBDeviceInfo {
-  uint8_t index;
+  // uint8_t index;
   uint16_t usb_vendor_id;
   uint16_t usb_product_id;
   bool need_firmware;
   std::string manufacturer;
   std::string product;
   std::string serial_number;
+  uint8_t usb_bus_number;
+  uint8_t usb_device_address;
 } USBDeviceInfo;
 
 typedef struct streaming streaming_t;
@@ -40,8 +43,6 @@ typedef struct streaming streaming_t;
 typedef void (*streaming_read_async_cb_t)(uint32_t data_size, uint8_t *data,
                                           void *context);
 
-
-std::vector<USBDeviceInfo> usb_device_get_device_list();
 
 class USBDevice
 {
@@ -51,7 +52,7 @@ class USBDevice
 
     std::vector<USBDeviceInfo> getDeviceList();
 
-    void open(USBDeviceInfo dev_select, const char* image, uint32_t size);
+    sddc_err_t open(USBDeviceInfo dev_select, const char* image, uint32_t size);
     void close();
     int control(uint8_t request, uint16_t value, uint16_t index, uint8_t *data, uint16_t length, bool read);
     int handleEvents();
@@ -70,10 +71,17 @@ class USBDevice
                             int *transferred);
 
   private:
+    // --- USB --- //
     libusb_context *usb_ctx = nullptr;
+    libusb_device_handle *dev_handle = nullptr;
+
+    libusb_device* findUSBDevice(USBDeviceInfo device_def, bool strict = true);
+    libusb_device_handle* initializeUSBDevice(libusb_device *device);
+    // --- //
+
     streaming_t *streaming_obj = nullptr;
 
-    libusb_device_handle *dev_handle = nullptr;
+    
     int completed = 0;
     uint8_t bulk_in_endpoint_address = 0;
     uint16_t bulk_in_max_packet_size = 0;
@@ -82,8 +90,9 @@ class USBDevice
     int list_endpoints(struct libusb_endpoint_descriptor endpoints[],
       struct libusb_ss_endpoint_companion_descriptor ss_endpoints[],
       libusb_device *device);
-    libusb_device_handle *find_usb_device(USBDeviceInfo,
-      libusb_device **device, int *needs_firmware);
+
+    
+
 
     // --- Streaming --- //
     struct libusb_transfer **transfers = nullptr;

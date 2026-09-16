@@ -65,9 +65,11 @@ int main(int argc, char const *argv[])
 		vector<SDDC::DeviceItem> device_list = RadioHandler::GetDeviceList();
 
 		cout << "Index - Model - Serial number" << endl;
+		int count = 0;
 		for(auto it: device_list)
 		{
-			cout << std::to_string(it.index) << " - " << it.product << " - " << it.serial_number << endl;
+			cout << count << " - " << it.product << " - " << it.serial_number << endl;
+			count++;
 		}
 	}
 	else if(program.is_subcommand_used("listen"))

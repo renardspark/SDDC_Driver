@@ -35,7 +35,13 @@ typedef enum sddc_err_t {
 	ERR_DECIMATION_OUT_OF_RANGE, ///< The given decimation is out of the allowed range
 	ERR_NOT_LED, ///< The selected LED is not an LED
 	ERR_BUFFER_SIZE_INVALID,
-	ERR_OUT_OF_RANGE
+	ERR_OUT_OF_RANGE,
+	ERR_USB_DEVICE_NOT_FOUND,
+	ERR_USB_STUCK_IN_BOOTLOADER,
+	ERR_USB_USB3_UNAVAILABLE,
+	ERR_USB_LIST_ENDPOINTS_FAILED,
+	ERR_USB_OPEN_FAILED,
+	ERR_USB_NO_BULK_IN_ENDPOINT
 } sddc_err_t;
 
 typedef enum sddc_rf_mode_t {

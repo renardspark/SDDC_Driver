@@ -111,7 +111,6 @@ public:
     {
         vector<SDDC::DeviceItem> devs;
         devs.push_back(SDDC::DeviceItem{
-            .index = 0,
             .product = "Blank",
             .serial_number = "Blank"
         });

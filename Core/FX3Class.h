@@ -17,6 +17,16 @@
 #include "config.h"
 #include "../Interface.h"
 #include "dsp/ringbuffer.h"
+#include "arch/linux/usb_device.h"
+
+
+namespace SDDC {
+	typedef struct DeviceItem {
+		std::string product; ///< The model of the SDR
+		std::string serial_number; ///< The serial number of the SDR
+		USBDeviceInfo _usb_def;
+	} DeviceItem;
+}
 
 class fx3class
 {
