@@ -61,7 +61,7 @@ radio.SetBiasT_VHF(true);
 
 ## Start and use the stream
 
-The data stream can be controlled using the functions `RadioHandler::Start()`, `RadioHandler::()`, `RadioHandler::Pause()`, and `RadioHandler::Resume()`.
+The data stream can be controlled using the functions `RadioHandler::Start()`, `RadioHandler::Stop()`, `RadioHandler::Pause()`, and `RadioHandler::Resume()`.
 
 The data can be retrieved as raw ADC values, or as an I/Q stream. Choosing between these two modes is done when calling `RadioHandler::Start()`.
 

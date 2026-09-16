@@ -37,14 +37,6 @@
 
 class RadioHardware;
 
-enum {
-	RESULT_OK,
-	RESULT_BIG_STEP,
-	RESULT_TOO_HIGH,
-	RESULT_TOO_LOW,
-	RESULT_NOT_POSSIBLE
-};
-
 struct shift_limited_unroll_C_sse_data_s;
 typedef struct shift_limited_unroll_C_sse_data_s shift_limited_unroll_C_sse_data_t;
 

@@ -102,7 +102,7 @@
             th->MinMaxBlockCount = 0;
         }
 #endif
-        
+
         // decimate in frequency plus tuning
 
         const int _center_frequency_bin = this->center_frequency_bin;
@@ -122,7 +122,7 @@
             fft_output_half_size - _center_frequency_bin,
             0
         );
-        
+
         // Main processing loop based on overlap-save method
         // It also includes filtering and decimation
         for (int k = 0; k < ffts_per_blocks; k++)
