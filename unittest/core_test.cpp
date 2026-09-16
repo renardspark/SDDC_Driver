@@ -150,7 +150,7 @@ TEST_CASE(CoreFixture, BasicTest)
     REQUIRE_EQUAL(radio->getHardwareModel(), NORADIO);
     REQUIRE_EQUAL(radio->getHardwareName(), "Dummy");
 
-    REQUIRE_EQUAL(radio->GetADCSampleRate(), 64000000u);
+    REQUIRE_EQUAL(radio->GetADCSampleRate(), 1000000u);
     radio->SetADCSampleRate(32000000);
     REQUIRE_EQUAL(radio->GetADCSampleRate(), 32000000u);
 
