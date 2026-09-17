@@ -505,6 +505,7 @@ void SoapySDDC::writeSetting(const std::string &key, const std::string &value)
     }
 }
 
+
 // void SoapySDDC::setMasterClockRate(const double rate)
 // {
 //     DbgPrintf("SoapySDDC::setMasterClockRate %f\n", rate);
