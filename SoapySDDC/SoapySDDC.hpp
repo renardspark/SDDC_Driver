@@ -109,7 +109,6 @@ public:
 
     
 
-    std::string readSetting(const std::string &key) const;
 
     // void setMasterClockRate(const double rate);
 
