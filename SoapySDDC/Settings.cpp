@@ -1,5 +1,6 @@
 #include "SoapySDDC.hpp"
 
+#include <SoapySDR/Logger.hpp>
 #include <sys/types.h>
 #include <cstdint>
 #include <cstring>
@@ -425,6 +426,7 @@ SoapySDR::ArgInfoList SoapySDDC::getSettingInfo(void) const
 
     SoapySDR::ArgInfoList setArgs;
 
+    // BiasT HF setting
     SoapySDR::ArgInfo BiasTHFArg;
     BiasTHFArg.key = "SetBiasT_HF";
     BiasTHFArg.value = "false";
@@ -433,6 +435,7 @@ SoapySDR::ArgInfoList SoapySDDC::getSettingInfo(void) const
     BiasTHFArg.type = SoapySDR::ArgInfo::BOOL;
     setArgs.push_back(BiasTHFArg);
 
+    // BiasT VHF setting
     SoapySDR::ArgInfo BiasTVHFArg;
     BiasTVHFArg.key = "SetBiasT_VHF";
     BiasTVHFArg.value = "false";
@@ -500,8 +503,79 @@ void SoapySDDC::writeSetting(const std::string &key, const std::string &value)
         bool rand = (value == "true") ? true : false;
         radio_handler->SetRand(rand);
     }
+    else if (key == "adc_frequency")
+    {
+        try {
+            // Reject negative input before parsing (std::stoul wraps negative strings to huge unsigned values)
+            if (!value.empty() && value[0] == '-') {
+                SoapySDR_logf(SOAPY_SDR_ERROR, 
+                    "Invalid adc_frequency: cannot be negative ('%s')", value.c_str());
+                return;
+            }
+            
+            unsigned long freq_ul = std::stoul(value);
+            
+            if (freq_ul > UINT32_MAX) {
+                SoapySDR_logf(SOAPY_SDR_ERROR, "ADC frequency exceeds uint32_t maximum");
+                return;
+            }
+            
+            uint32_t newAdcFreq = static_cast<uint32_t>(freq_ul);
+            uint32_t max_freq = supportsHighADCFrequency() ? MAX_ADC_FREQ : 64000000;
+            
+            if (newAdcFreq < MIN_ADC_FREQ || newAdcFreq > max_freq) {
+                SoapySDR_logf(SOAPY_SDR_ERROR, 
+                    "Invalid adc_frequency: must be %u-%u Hz", MIN_ADC_FREQ, max_freq);
+                return;
+            }
+            
+            adcnominalfreq = newAdcFreq;
+            RadioHandler.UpdateSampleRate(newAdcFreq);
+            
+            // Recompute sampleRate member variable for current sample rate index
+            // Follows ExtIO's SetOverclock pattern (ExtIO_sddc.cpp lines 854-874)
+            double newRate = computeSampleRateFromIndex(samplerateidx);
+            if (newRate > 0) {
+                sampleRate = newRate;
+                SoapySDR_logf(SOAPY_SDR_INFO, 
+                    "ADC frequency changed to %u Hz, sample rate adjusted to %f Hz", 
+                    newAdcFreq, newRate);
+            } else {
+                // Current index invalid for new ADC freq, reset to safe default (index 4 = mid-range)
+                samplerateidx = 4;
+                sampleRate = computeSampleRateFromIndex(4);
+                SoapySDR_logf(SOAPY_SDR_WARNING, 
+                    "ADC frequency change invalidated sample rate index, reset to %f Hz", 
+                    sampleRate);
+            }
+            
+        } catch (const std::invalid_argument& e) {
+            SoapySDR_logf(SOAPY_SDR_ERROR, 
+                "Invalid adc_frequency format: '%s'", value.c_str());
+        } catch (const std::out_of_range& e) {
+            SoapySDR_logf(SOAPY_SDR_ERROR, 
+                "ADC frequency out of range: '%s'", value.c_str());
+        }
+        return;
+    }
 }
 
+std::string SoapySDDC::readSetting(const std::string &key) const
+{
+    if (key == "UpdBiasT_HF")
+    {
+        return const_cast<SoapySDDC*>(this)->RadioHandler.GetBiasT_HF() ? "true" : "false";
+    }
+    else if (key == "UpdBiasT_VHF")
+    {
+        return const_cast<SoapySDDC*>(this)->RadioHandler.GetBiasT_VHF() ? "true" : "false";
+    }
+    else if (key == "adc_frequency")
+    {
+        return std::to_string(adcnominalfreq);
+    }
+    return "";
+}
 
 // void SoapySDDC::setMasterClockRate(const double rate)
 // {

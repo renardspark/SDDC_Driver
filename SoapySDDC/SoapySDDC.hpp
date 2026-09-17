@@ -109,6 +109,8 @@ public:
 
     
 
+    std::string readSetting(const std::string &key) const;
+
     // void setMasterClockRate(const double rate);
 
     // double getMasterClockRate(void) const;
@@ -133,6 +135,15 @@ private:
 
     fx3class *Fx3;
     RadioHandler *radio_handler;
+
+    // Helper to check if device supports high ADC frequencies
+    bool supportsHighADCFrequency() const;
+    
+    // Compute expected sample rate for given index based on current ADC frequency
+    double computeSampleRateFromIndex(int idx) const;
+    
+    // Find best sample rate index for requested rate, returns -1 if invalid
+    int findSampleRateIndex(double rate) const;
 
 public:
     void Callback(const sddc_complex_t *data, uint32_t len);
