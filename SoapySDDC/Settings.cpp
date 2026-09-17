@@ -1,5 +1,6 @@
 #include "SoapySDDC.hpp"
 
+#include <SoapySDR/Logger.hpp>
 #include <sys/types.h>
 #include <cstdint>
 #include <cstring>
@@ -425,6 +426,7 @@ SoapySDR::ArgInfoList SoapySDDC::getSettingInfo(void) const
 
     SoapySDR::ArgInfoList setArgs;
 
+    // BiasT HF setting
     SoapySDR::ArgInfo BiasTHFArg;
     BiasTHFArg.key = "SetBiasT_HF";
     BiasTHFArg.value = "false";
@@ -433,6 +435,7 @@ SoapySDR::ArgInfoList SoapySDDC::getSettingInfo(void) const
     BiasTHFArg.type = SoapySDR::ArgInfo::BOOL;
     setArgs.push_back(BiasTHFArg);
 
+    // BiasT VHF setting
     SoapySDR::ArgInfo BiasTVHFArg;
     BiasTVHFArg.key = "SetBiasT_VHF";
     BiasTVHFArg.value = "false";
