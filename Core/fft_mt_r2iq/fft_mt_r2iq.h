@@ -1,16 +1,13 @@
 #pragma once
 
-#include "fftw3.h"
-#include "../config.h"
-#include <algorithm>
-#include <string.h>
+// --- External dependencies --- //
 #include <thread>
 #include <mutex>
 #include <condition_variable>
-#include <atomic>
-#include <vector>
-#include <limits>
+#include "fftw3.h"
 
+// --- Internal dependencies --- //
+#include "../config.h"
 #include "../dsp/ringbuffer.h"
 
 // use up to this many threads
@@ -38,16 +35,8 @@ public:
     bool IsOn(void);
 
     // --- Decimation --- //
-    int getRatio()
-    {
-        return decimation_ratio[decimation];
-    }
-    bool setDecimate(uint8_t dec)
-    {
-        if(dec >= NDECIDX) return false;
-        this->decimation = dec;
-        return true;
-    }
+    int getRatio();
+    bool setDecimate(uint8_t dec);
     // --- //
 
     void SetRand(bool v) { this->stateADCRand = v; }
@@ -58,8 +47,8 @@ public:
 
     float setFreqOffset(float offset);
 
-protected:
-
+private:
+    // --- Tools --- //
     template<bool rand> void convert_float(const int16_t *input, float* output, int size)
     {
         for(int m = 0; m < size; m++)
@@ -108,7 +97,6 @@ protected:
         }
     }
 
-private:
     bool r2iqOn;        // r2iq on flag
 
     ringbuffer<int16_t>* inputbuffer;    // pointer to input buffers

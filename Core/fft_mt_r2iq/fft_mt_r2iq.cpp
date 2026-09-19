@@ -11,10 +11,13 @@ The name fft_mt_r2iq stands for Fast Fourier Transform, Multi-Threaded, Real to 
 
 */
 
+// --- External dependencies --- //
+#include <cstring>
+
+// --- Internal dependencies --- //
 #include "fft_mt_r2iq.h"
 #include "../config.h"
-#include "fftw3.h"
-#include "../RadioHandler.h"
+
 
 #include "../fir.h"
 
@@ -264,6 +267,18 @@ void fft_mt_r2iq::Init(float gain, ringbuffer<int16_t> *input, ringbuffer<float>
 	}
 
 	DebugPrintln(TAG, "Initialization done");
+}
+
+int fft_mt_r2iq::getRatio()
+{
+    return decimation_ratio[decimation];
+}
+
+bool fft_mt_r2iq::setDecimate(uint8_t dec)
+{
+    if(dec >= NDECIDX) return false;
+    this->decimation = dec;
+    return true;
 }
 
 #ifdef _WIN32
