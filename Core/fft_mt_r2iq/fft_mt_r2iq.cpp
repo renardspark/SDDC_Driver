@@ -13,6 +13,8 @@ The name fft_mt_r2iq stands for Fast Fourier Transform, Multi-Threaded, Real to 
 
 // --- External dependencies --- //
 #include <cstring>
+#include <cmath>
+#include <limits>
 
 // --- Internal dependencies --- //
 #include "fft_mt_r2iq.h"
