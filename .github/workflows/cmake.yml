@@ -45,6 +45,13 @@ jobs:
     # See: https://docs.github.com/en/free-pro-team@latest/actions/learn-github-actions/managing-complex-workflows#using-a-build-matrix
     runs-on: windows-2025
     needs: build-firmware
+    strategy:
+      matrix:
+        include:
+          - arch: x86
+            cmake_args: -A Win32
+          - arch: x86_64
+            cmake_args: '"-DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake" -A x64'
 
     steps:
     - uses: actions/checkout@v7
@@ -56,12 +63,12 @@ jobs:
     - name: Install vcpkg dependencies
       run: cd c:\vcpkg ; git pull ; vcpkg install soapysdr:x64-windows
 
-    - name: x86 - Create Build Environment
+    - name: Create Build Environment
       # Some projects don't allow in-source building, so create a separate build directory
       # We'll use this as our working directory for all subsequent commands
       run: cmake -E make_directory ${{runner.workspace}}/build
 
-    - name: x86 - Configure CMake
+    - name: Configure CMake
       # Use a bash shell so we can use the same syntax for environment variable
       # access regardless of the host operating system
       shell: bash
@@ -69,24 +76,10 @@ jobs:
       # Note the current convention is to use the -S and -B options here to specify source
       # and build directories, but this is only available with CMake 3.13 and higher.
       # The CMake binaries on the Github Actions machines are (as of this writing) 3.12
-      run: cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=$BUILD_TYPE -G "Visual Studio 18 2026" -A Win32
+      run: cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=$BUILD_TYPE -G "Visual Studio 18 2026" ${{matrix.cmake_args}}
 
-    - name: x86 - Build
+    - name: Build
       working-directory: ${{runner.workspace}}/build
-      shell: bash
-      # Execute the build.  You can specify a specific target with "--target <NAME>"
-      run: cmake --build . --config $BUILD_TYPE
-
-    - name: x64 - Create Build Environment
-      run: cmake -E make_directory ${{runner.workspace}}/build64
-
-    - name: x64 - Configure CMake
-      shell: bash
-      working-directory: ${{runner.workspace}}/build64
-      run: cmake $GITHUB_WORKSPACE "-DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake" -DCMAKE_BUILD_TYPE=$BUILD_TYPE -G "Visual Studio 18 2026"
-
-    - name: x64 - Build
-      working-directory: ${{runner.workspace}}/build64
       shell: bash
       # Execute the build.  You can specify a specific target with "--target <NAME>"
       run: cmake --build . --config $BUILD_TYPE
@@ -107,51 +100,40 @@ jobs:
 
     - uses: actions/upload-artifact@v7
       with:
-        name: ExtIO_Windows_x86
+        name: ExtIO_Windows_${{matrix.arch}}
         path: SDDC_EXTIO.ZIP
 
     - uses: actions/upload-artifact@v7
       with:
-        name: ExtIO_Windows_x86.dll
+        name: ExtIO_Windows_${{matrix.arch}}.dll
         path: ${{runner.workspace}}/build/ExtIO_sddc/Release/ExtIO_SDDC.dll
-
-    - uses: actions/upload-artifact@v7
-      with:
-        name: ExtIO_Windows_x86_64.dll
-        path: ${{runner.workspace}}/build64/ExtIO_sddc/Release/ExtIO_SDDC.dll
 
     - working-directory: ${{runner.workspace}}/build64/SoapySDDC/Release/
       shell: bash
-      run: mv SDDCSupport.dll SoapySDDC_Windows_x86_64.dll
+      run: mv SDDCSupport.dll SoapySDDC_Windows_${{matrix.arch}}.dll
     - uses: actions/upload-artifact@v7
       with:
-        path: ${{runner.workspace}}/build64/SoapySDDC/Release/SoapySDDC_Windows_x86_64.dll
+        path: ${{runner.workspace}}/build64/SoapySDDC/Release/SoapySDDC_Windows_${{matrix.arch}}.dll
         archive: false
 
     - working-directory: ${{runner.workspace}}/build/sddc-cli/Release/
       shell: bash
-      run: mv sddc-cli.exe sddc-cli_Windows_x86.exe
+      run: mv sddc-cli.exe sddc-cli_Windows_${{matrix.arch}}.exe
     - uses: actions/upload-artifact@v7
       with:
-        path: ${{runner.workspace}}/build/sddc-cli/Release/sddc-cli_Windows_x86.exe
-        archive: false
-
-    - working-directory: ${{runner.workspace}}/build64/sddc-cli/Release/
-      shell: bash
-      run: mv sddc-cli.exe sddc-cli_Windows_x86_64.exe
-    - uses: actions/upload-artifact@v7
-      with:
-        path: ${{runner.workspace}}/build64/sddc-cli/Release/sddc-cli_Windows_x86_64.exe
+        path: ${{runner.workspace}}/build/sddc-cli/Release/sddc-cli_Windows_${{matrix.arch}}.exe
         archive: false
 
   build-on-linux:
-    # The CMake configure and build commands are platform agnostic and should work equally
-    # well on Windows or Mac.  You can convert this to a matrix build if you need
-    # cross-platform coverage.
-    # See: https://docs.github.com/en/free-pro-team@latest/actions/learn-github-actions/managing-complex-workflows#using-a-build-matrix
-    runs-on: ubuntu-latest
     needs: build-firmware
-
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            arch: x86_64
+          - os: ubuntu-26.04-arm
+            arch: arm64
     steps:
     - uses: actions/checkout@v7
 
@@ -190,18 +172,18 @@ jobs:
 
     - working-directory: ${{runner.workspace}}/build/SoapySDDC/
       shell: bash
-      run: mv libSDDCSupport.so SoapySDDC_Linux_x86_64.so
+      run: mv libSDDCSupport.so SoapySDDC_Linux_${{matrix.arch}}.so
     - uses: actions/upload-artifact@v7
       with:
-        path: ${{runner.workspace}}/build/SoapySDDC/SoapySDDC_Linux_x86_64.so
+        path: ${{runner.workspace}}/build/SoapySDDC/SoapySDDC_Linux_${{matrix.arch}}.so
         archive: false
 
     - working-directory: ${{runner.workspace}}/build/sddc-cli/
       shell: bash
-      run: mv sddc-cli sddc-cli_Linux_x86_64
+      run: mv sddc-cli sddc-cli_Linux_${{matrix.arch}}
     - uses: actions/upload-artifact@v7
       with:
-        path: ${{runner.workspace}}/build/sddc-cli/sddc-cli_Linux_x86_64
+        path: ${{runner.workspace}}/build/sddc-cli/sddc-cli_Linux_${{matrix.arch}}
         archive: false
 
   build-on-macos:
