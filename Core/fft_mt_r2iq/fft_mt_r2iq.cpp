@@ -301,7 +301,7 @@ bool fft_mt_r2iq::setDecimate(uint8_t dec)
 	static bool detect_neon()
 	{
 		unsigned long caps = getauxval(AT_HWCAP);
-		return (caps & HWCAP_NEON);
+		return (caps & HWCAP_ASIMD);
 	}
     #elif defined(__APPLE__)
         #include <sys/sysctl.h>
