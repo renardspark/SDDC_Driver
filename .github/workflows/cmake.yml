@@ -35,8 +35,8 @@ jobs:
 
     - uses: actions/upload-artifact@v7
       with:
-        name: SDDC_FX3.img
         path: ./SDDC_FX3/SDDC_FX3.img
+        archive: false
 
   build-on-windows:
     # The CMake configure and build commands are platform agnostic and should work equally
@@ -120,15 +120,21 @@ jobs:
         name: ExtIO_Windows_x86_64.dll
         path: ${{runner.workspace}}/build64/ExtIO_sddc/Release/ExtIO_SDDC.dll
 
+    - working-directory: ${{runner.workspace}}/build/SoapySDDC/Release/
+      shell: bash
+      run: mv SDDCSupport.dll SoapySDDC_Windows_x86.dll
     - uses: actions/upload-artifact@v7
       with:
-        name: SoapySDDC_Windows_x86.dll
-        path: ${{runner.workspace}}/build/SoapySDDC/Release/SDDCSupport.dll
+        path: ${{runner.workspace}}/build/SoapySDDC/Release/SoapySDDC_Windows_x86.dll
+        archive: false
 
+    - working-directory: ${{runner.workspace}}/build64/SoapySDDC/Release/
+      shell: bash
+      run: mv SDDCSupport.dll SoapySDDC_Windows_x86_64.dll
     - uses: actions/upload-artifact@v7
       with:
-        name: SoapySDDC_Windows_x86_64.dll
-        path: ${{runner.workspace}}/build64/SoapySDDC/Release/SDDCSupport.dll
+        path: ${{runner.workspace}}/build64/SoapySDDC/Release/SoapySDDC_Windows_x86_64.dll
+        archive: false
 
   build-on-linux:
     # The CMake configure and build commands are platform agnostic and should work equally
@@ -174,19 +180,21 @@ jobs:
       # See https://cmake.org/cmake/help/latest/manual/ctest.1.html for more detail
       run: ctest -C $BUILD_TYPE
 
-    - name: Create Package
+    - working-directory: ${{runner.workspace}}/build/SoapySDDC/
       shell: bash
-      run: zip SDDC_SOAPY_Linux_x86_64.ZIP ${{runner.workspace}}/build/SoapySDDC/libSDDCSupport.so
-
+      run: mv libSDDCSupport.so SoapySDDC_Linux_x86_64.so
     - uses: actions/upload-artifact@v7
       with:
-        name: SoapySDDC_Linux_x86_64.so
-        path: ${{runner.workspace}}/build/SoapySDDC/libSDDCSupport.so
+        path: ${{runner.workspace}}/build/SoapySDDC/SoapySDDC_Linux_x86_64.so
+        archive: false
 
+    - working-directory: ${{runner.workspace}}/build/sddc-cli/
+      shell: bash
+      run: mv sddc-cli sddc-cli_Linux_x86_64
     - uses: actions/upload-artifact@v7
       with:
-        name: sddc-cli_Linux_x86_64
         path: ${{runner.workspace}}/build/sddc-cli/sddc-cli
+        archive: false
 
   build-on-macos:
     name: build-on-macos
