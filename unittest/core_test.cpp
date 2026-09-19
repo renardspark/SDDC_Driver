@@ -1,5 +1,7 @@
-#include "FX3Class.h"
+#include <limits>
 #include "CppUnitTestFramework.hpp"
+
+#include "FX3Class.h"
 #include <thread>
 #include <chrono>
 #include <vector>

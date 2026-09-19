@@ -1,5 +1,6 @@
 #include "dsp/ringbuffer.h"
 
+#include <limits>
 #include "CppUnitTestFramework.hpp"
 #include <thread>
 #include <chrono>

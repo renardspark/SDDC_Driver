@@ -291,3 +291,4 @@ Makefile
 /generated/
 LIBCPPUNIT-prefix/
 /docs
+/SDDC_FX3.img

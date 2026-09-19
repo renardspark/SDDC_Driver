@@ -14,20 +14,17 @@ else()
     set_source_files_properties(fft_mt_r2iq/fft_mt_r2iq_impl_avx.cpp PROPERTIES COMPILE_FLAGS -mavx)
     set_source_files_properties(fft_mt_r2iq/fft_mt_r2iq_impl_avx2.cpp PROPERTIES COMPILE_FLAGS -mavx2)
     set_source_files_properties(fft_mt_r2iq/fft_mt_r2iq_impl_avx512.cpp PROPERTIES COMPILE_FLAGS -mavx512f)
-  elseif("${CMAKE_SYSTEM_PROCESSOR}" MATCHES "arm.*")
+  elseif("${CMAKE_SYSTEM_PROCESSOR}" MATCHES "arm.*" OR "${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "aarch64")
     # We may have Neon..
     message(STATUS "Compiling for Neon")
     list(FILTER SRC EXCLUDE REGEX "fft_mt_r2iq/fft_mt_r2iq_avx.*")
     list(APPEND SRC fft_mt_r2iq/fft_mt_r2iq_impl_neon.cpp)
     # On Apple Silicon (arm64) clang does not accept '-mfpu='; NEON is enabled by default.
-    if(APPLE)
-      # Don't pass -mfpu to Apple clang; only enable PFFFT's NEON code path and relax strict-aliasing warnings
-      set_source_files_properties(fft_mt_r2iq/fft_mt_r2iq_impl_neon.cpp PROPERTIES COMPILE_FLAGS "")
-      set_source_files_properties(pffft/pf_mixer.cpp PROPERTIES COMPILE_FLAGS "-D PFFFT_ENABLE_NEON -Wno-strict-aliasing")
-    else()
-      set_source_files_properties(fft_mt_r2iq/fft_mt_r2iq_impl_neon.cpp PROPERTIES COMPILE_FLAGS -mfpu=neon-vfpv4)
-      set_source_files_properties(pffft/pf_mixer.cpp PROPERTIES COMPILE_FLAGS "-D PFFFT_ENABLE_NEON -mfpu=neon-vfpv4 -Wno-strict-aliasing")
-    endif()
+    # This is also the case on every aarch64 architecture
+    # Thus, this project is only compatible with 64bit ARM architectures
+
+    set_source_files_properties(fft_mt_r2iq/fft_mt_r2iq_impl_neon.cpp PROPERTIES COMPILE_FLAGS "")
+    set_source_files_properties(pffft/pf_mixer.cpp PROPERTIES COMPILE_FLAGS "-D PFFFT_ENABLE_NEON -Wno-strict-aliasing")
   else()
     message(FATAL_ERROR "Unable to identify CPU: ${CMAKE_SYSTEM_PROCESSOR}")
   endif()
