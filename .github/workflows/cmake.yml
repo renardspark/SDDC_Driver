@@ -49,6 +49,10 @@ jobs:
     steps:
     - uses: actions/checkout@v7
 
+    - uses: actions/download-artifact@v8
+      with:
+        name: SDDC_FX3.img
+
     - name: Install vcpkg dependencies
       run: cd c:\vcpkg ; git pull ; vcpkg install soapysdr:x64-windows
 
@@ -66,10 +70,6 @@ jobs:
       # and build directories, but this is only available with CMake 3.13 and higher.
       # The CMake binaries on the Github Actions machines are (as of this writing) 3.12
       run: cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=$BUILD_TYPE -G "Visual Studio 18 2026" -A Win32
-
-    - uses: actions/download-artifact@v8
-      with:
-        name: SDDC_FX3.img
 
     - name: Build
       working-directory: ${{runner.workspace}}/build
@@ -141,7 +141,7 @@ jobs:
       # Use a bash shell so we can use the same syntax for environment variable
       # access regardless of the host operating system
       shell: bash
-      run: cmake -S $GITHUB_WORKSPACE -B $GITHUB_WORKSPACE/build -DCMAKE_BUILD_TYPE=$BUILD_TYPE
+      run: cmake -S $GITHUB_WORKSPACE -B ${{runner.workspace}}/build -DCMAKE_BUILD_TYPE=$BUILD_TYPE
 
     - name: Build
       working-directory: ${{runner.workspace}}/build
