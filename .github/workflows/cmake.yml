@@ -130,6 +130,7 @@ jobs:
   build-on-linux:
     needs: build-firmware
     runs-on: ${{ matrix.os }}
+    name: build-on-linux-${{matrix.arch}}
     continue-on-error: true
     strategy:
       matrix:
@@ -194,6 +195,7 @@ jobs:
     name: build-on-macos
     needs: build-firmware
     runs-on: ${{ matrix.os }}
+    name: build-on-macos-${{ matrix.arch }}
     strategy:
       matrix:
         include:
@@ -231,7 +233,7 @@ jobs:
         shell: bash
         run: |
           install_dir="${{ runner.workspace }}/install/${{ matrix.arch }}"
-          archive="SDDC_SOAPY_OSX_${{ matrix.arch }}.zip"
+          archive="SoapySDDC_MacOS_${{ matrix.arch }}.zip"
           if [ -d "${install_dir}" ]; then
             # Create the archive from inside the install dir so the archive
             # contains the module files without the leading install/... path.
@@ -244,5 +246,13 @@ jobs:
       - name: Upload SoapySDR Package
         uses: actions/upload-artifact@v7
         with:
-          name: SoapySDDC_MacOS_${{ matrix.arch }}
-          path: ${{ runner.workspace }}/SDDC_SOAPY_OSX_${{ matrix.arch }}.zip
+          path: ${{ runner.workspace }}/SoapySDDC_MacOS_${{ matrix.arch }}.zip
+          archive: false
+
+      - working-directory: ${{runner.workspace}}/build-${{ matrix.arch }}/sddc-cli/
+        shell: bash
+        run: mv sddc-cli sddc-cli_MacOS_${{matrix.arch}}
+      - uses: actions/upload-artifact@v7
+        with:
+          path: ${{runner.workspace}}/build-${{ matrix.arch }}/sddc-cli/sddc-cli_MacOS_${{matrix.arch}}
+          archive: false
