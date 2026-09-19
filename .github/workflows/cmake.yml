@@ -192,7 +192,6 @@ jobs:
         archive: false
 
   build-on-macos:
-    name: build-on-macos
     needs: build-firmware
     runs-on: ${{ matrix.os }}
     name: build-on-macos-${{ matrix.arch }}
