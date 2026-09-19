@@ -56,12 +56,12 @@ jobs:
     - name: Install vcpkg dependencies
       run: cd c:\vcpkg ; git pull ; vcpkg install soapysdr:x64-windows
 
-    - name: Create Build Environment
+    - name: x86 - Create Build Environment
       # Some projects don't allow in-source building, so create a separate build directory
       # We'll use this as our working directory for all subsequent commands
       run: cmake -E make_directory ${{runner.workspace}}/build
 
-    - name: Configure CMake
+    - name: x86 - Configure CMake
       # Use a bash shell so we can use the same syntax for environment variable
       # access regardless of the host operating system
       shell: bash
@@ -71,21 +71,21 @@ jobs:
       # The CMake binaries on the Github Actions machines are (as of this writing) 3.12
       run: cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=$BUILD_TYPE -G "Visual Studio 18 2026" -A Win32
 
-    - name: Build
+    - name: x86 - Build
       working-directory: ${{runner.workspace}}/build
       shell: bash
       # Execute the build.  You can specify a specific target with "--target <NAME>"
       run: cmake --build . --config $BUILD_TYPE
 
-    - name: Create Build64 Environment
+    - name: x64 - Create Build Environment
       run: cmake -E make_directory ${{runner.workspace}}/build64
 
-    - name: Configure CMake64
+    - name: x64 - Configure CMake
       shell: bash
       working-directory: ${{runner.workspace}}/build64
       run: cmake $GITHUB_WORKSPACE "-DCMAKE_TOOLCHAIN_FILE=C:/vcpkg/scripts/buildsystems/vcpkg.cmake" -DCMAKE_BUILD_TYPE=$BUILD_TYPE -G "Visual Studio 18 2026"
 
-    - name: Build
+    - name: x64 - Build
       working-directory: ${{runner.workspace}}/build64
       shell: bash
       # Execute the build.  You can specify a specific target with "--target <NAME>"
@@ -94,13 +94,11 @@ jobs:
     - name: Install FFTW3
       working-directory: ${{runner.workspace}}/build
       shell: powershell
-      # Execute the build.  You can specify a specific target with "--target <NAME>"
       run: Invoke-WebRequest -Uri "ftp://ftp.fftw.org/pub/fftw/fftw-3.3.5-dll32.zip" -OutFile fftw-3.3.5-dll32.zip
 
     - name: Unzip FFTW3
       working-directory: ${{runner.workspace}}/build
       shell: powershell
-      # Execute the build.  You can specify a specific target with "--target <NAME>"
       run: Expand-Archive -Path .\fftw-3.3.5-dll32.zip -DestinationPath unittest
 
     - name: Create Package
@@ -111,6 +109,26 @@ jobs:
       with:
         name: ExtIO_Windows_x86
         path: SDDC_EXTIO.ZIP
+
+    - uses: actions/upload-artifact@v7
+      with:
+        name: ExtIO_Windows_x86.dll
+        path: ${{runner.workspace}}/build/ExtIO_sddc/Release/ExtIO_SDDC.dll
+
+    - uses: actions/upload-artifact@v7
+      with:
+        name: ExtIO_Windows_x86_64.dll
+        path: ${{runner.workspace}}/build64/ExtIO_sddc/Release/ExtIO_SDDC.dll
+
+    - uses: actions/upload-artifact@v7
+      with:
+        name: SoapySDDC_Windows_x86.dll
+        path: ${{runner.workspace}}/build/SoapySDDC/Release/SDDCSupport.dll
+
+    - uses: actions/upload-artifact@v7
+      with:
+        name: SoapySDDC_Windows_x86_64.dll
+        path: ${{runner.workspace}}/build64/SoapySDDC/Release/SDDCSupport.dll
 
   build-on-linux:
     # The CMake configure and build commands are platform agnostic and should work equally
@@ -162,7 +180,7 @@ jobs:
 
     - uses: actions/upload-artifact@v7
       with:
-        name: SoapySDDC_Linux_x86_64
+        name: SoapySDDC_Linux_x86_64.so
         path: ${{runner.workspace}}/build/SoapySDDC/libSDDCSupport.so
 
     - uses: actions/upload-artifact@v7
@@ -224,5 +242,5 @@ jobs:
       - name: Upload SoapySDR Package
         uses: actions/upload-artifact@v7
         with:
-          name: soapy-package-${{ matrix.arch }}
+          name: SoapySDDC_MacOS_${{ matrix.arch }}
           path: ${{ runner.workspace }}/SDDC_SOAPY_OSX_${{ matrix.arch }}.zip
