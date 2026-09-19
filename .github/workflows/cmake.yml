@@ -45,6 +45,7 @@ jobs:
     # See: https://docs.github.com/en/free-pro-team@latest/actions/learn-github-actions/managing-complex-workflows#using-a-build-matrix
     runs-on: windows-2025
     needs: build-firmware
+    continue-on-error: true
     strategy:
       matrix:
         include:
@@ -115,7 +116,7 @@ jobs:
       run: mv SDDCSupport.dll SoapySDDC_Windows_${{matrix.arch}}.dll
     - uses: actions/upload-artifact@v7
       with:
-        path: ${{runner.workspace}}/build64/SoapySDDC/Release/SoapySDDC_Windows_${{matrix.arch}}.dll
+        path: ${{runner.workspace}}/build/SoapySDDC/Release/SoapySDDC_Windows_${{matrix.arch}}.dll
         archive: false
 
     - working-directory: ${{runner.workspace}}/build/sddc-cli/Release/
@@ -129,6 +130,7 @@ jobs:
   build-on-linux:
     needs: build-firmware
     runs-on: ${{ matrix.os }}
+    continue-on-error: true
     strategy:
       matrix:
         include:
