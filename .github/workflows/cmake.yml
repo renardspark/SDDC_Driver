@@ -35,7 +35,7 @@ jobs:
 
     - uses: actions/upload-artifact@v7
       with:
-        name: firmware
+        name: SDDC_FX3.img
         path: ./SDDC_FX3/SDDC_FX3.img
 
   build-on-windows:
@@ -69,7 +69,7 @@ jobs:
 
     - uses: actions/download-artifact@v8
       with:
-        name: firmware
+        name: SDDC_FX3.img
 
     - name: Build
       working-directory: ${{runner.workspace}}/build
@@ -118,9 +118,14 @@ jobs:
     # cross-platform coverage.
     # See: https://docs.github.com/en/free-pro-team@latest/actions/learn-github-actions/managing-complex-workflows#using-a-build-matrix
     runs-on: ubuntu-latest
+    needs: build-firmware
 
     steps:
     - uses: actions/checkout@v7
+
+    - uses: actions/download-artifact@v8
+      with:
+        name: SDDC_FX3.img
 
     - name: Install libs
       # Some projects don't allow in-source building, so create a separate build directory
@@ -171,6 +176,7 @@ jobs:
 
   build-on-macos:
     name: build-on-macos
+    needs: build-firmware
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -182,6 +188,10 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v7
+
+      - uses: actions/download-artifact@v8
+        with:
+          name: SDDC_FX3.img
 
       - name: Install dependencies
         run: |
