@@ -120,20 +120,28 @@ jobs:
         name: ExtIO_Windows_x86_64.dll
         path: ${{runner.workspace}}/build64/ExtIO_sddc/Release/ExtIO_SDDC.dll
 
-    - working-directory: ${{runner.workspace}}/build/SoapySDDC/Release/
-      shell: bash
-      run: mv SDDCSupport.dll SoapySDDC_Windows_x86.dll
-    - uses: actions/upload-artifact@v7
-      with:
-        path: ${{runner.workspace}}/build/SoapySDDC/Release/SoapySDDC_Windows_x86.dll
-        archive: false
-
     - working-directory: ${{runner.workspace}}/build64/SoapySDDC/Release/
       shell: bash
       run: mv SDDCSupport.dll SoapySDDC_Windows_x86_64.dll
     - uses: actions/upload-artifact@v7
       with:
         path: ${{runner.workspace}}/build64/SoapySDDC/Release/SoapySDDC_Windows_x86_64.dll
+        archive: false
+
+    - working-directory: ${{runner.workspace}}/build/sddc-cli/Release/
+      shell: bash
+      run: mv sddc-cli.exe sddc-cli_Windows_x86.exe
+    - uses: actions/upload-artifact@v7
+      with:
+        path: ${{runner.workspace}}/build/sddc-cli/Release/sddc-cli_Windows_x86.exe
+        archive: false
+
+    - working-directory: ${{runner.workspace}}/build64/sddc-cli/Release/
+      shell: bash
+      run: mv sddc-cli.exe sddc-cli_Windows_x86_64.exe
+    - uses: actions/upload-artifact@v7
+      with:
+        path: ${{runner.workspace}}/build64/sddc-cli/Release/sddc-cli_Windows_x86_64.exe
         archive: false
 
   build-on-linux:
@@ -193,7 +201,7 @@ jobs:
       run: mv sddc-cli sddc-cli_Linux_x86_64
     - uses: actions/upload-artifact@v7
       with:
-        path: ${{runner.workspace}}/build/sddc-cli/sddc-cli
+        path: ${{runner.workspace}}/build/sddc-cli/sddc-cli_Linux_x86_64
         archive: false
 
   build-on-macos:
