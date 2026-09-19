@@ -13,13 +13,13 @@ env:
   BUILD_TYPE: Release
 
 jobs:
-  build-firmware:
+  firmware:
     # The CMake configure and build commands are platform agnostic and should work equally
     # well on Windows or Mac.  You can convert this to a matrix build if you need
     # cross-platform coverage.
     # See: https://docs.github.com/en/free-pro-team@latest/actions/learn-github-actions/managing-complex-workflows#using-a-build-matrix
     runs-on: ubuntu-latest
-    name: build-firmware
+    name: firmware
 
     steps:
     - uses: actions/checkout@v7
@@ -38,13 +38,10 @@ jobs:
         path: ./SDDC_FX3/SDDC_FX3.img
         archive: false
 
-  build-on-windows:
-    # The CMake configure and build commands are platform agnostic and should work equally
-    # well on Windows or Mac.  You can convert this to a matrix build if you need
-    # cross-platform coverage.
-    # See: https://docs.github.com/en/free-pro-team@latest/actions/learn-github-actions/managing-complex-workflows#using-a-build-matrix
+  windows:
+    needs: firmware
     runs-on: windows-2025
-    needs: build-firmware
+    name: windows-${{matrix.arch}}
     continue-on-error: true
     strategy:
       matrix:
@@ -127,10 +124,10 @@ jobs:
         path: ${{runner.workspace}}/build/sddc-cli/Release/sddc-cli_Windows_${{matrix.arch}}.exe
         archive: false
 
-  build-on-linux:
-    needs: build-firmware
+  linux:
+    needs: firmware
     runs-on: ${{ matrix.os }}
-    name: build-on-linux-${{matrix.arch}}
+    name: linux-${{matrix.arch}}
     continue-on-error: true
     strategy:
       matrix:
@@ -191,10 +188,10 @@ jobs:
         path: ${{runner.workspace}}/build/sddc-cli/sddc-cli_Linux_${{matrix.arch}}
         archive: false
 
-  build-on-macos:
-    needs: build-firmware
+  macos:
+    needs: firmware
     runs-on: ${{ matrix.os }}
-    name: build-on-macos-${{ matrix.arch }}
+    name: macos-${{ matrix.arch }}
     strategy:
       matrix:
         include:
