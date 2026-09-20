@@ -1,4 +1,37 @@
 /*
+ * This file is part of SDDC_Driver.
+ *
+ * =====================
+ *      MIT License
+ * =====================
+ *
+ * Copyright (C) 2020 - Oscar Steila
+ * Copyright (C) 2020 - Howard Su
+ * Copyright (C) 2021 - Hayati Ayguen
+ * Copyright (C) 2021 - Phil Ashby
+ * Copyright (C) 2025 - Ruslan Migirov
+ * Copyright (C) 2025 - RenardSpark
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
+/*
 The ADC input real stream of 16 bit samples (at Fs = 64 Msps in the example) is converted to:
 - 32 Msps float Fs/2 complex stream, or
 - 16 Msps float Fs/2 complex stream, or
