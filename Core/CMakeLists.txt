@@ -20,8 +20,8 @@ else()
     list(FILTER SRC EXCLUDE REGEX "fft_mt_r2iq/fft_mt_r2iq_avx.*")
     list(APPEND SRC fft_mt_r2iq/fft_mt_r2iq_impl_neon.cpp)
     # On Apple Silicon (arm64) clang does not accept '-mfpu='; NEON is enabled by default.
-    # This is also the case on every aarch64 architecture
-    # Thus, this project is only compatible with 64bit ARM architectures
+    # This is also the case on every aarch64 architecture
+    # Thus, this project is only compatible with 64bit ARM architectures
 
     set_source_files_properties(fft_mt_r2iq/fft_mt_r2iq_impl_neon.cpp PROPERTIES COMPILE_FLAGS "")
     set_source_files_properties(pffft/pf_mixer.cpp PROPERTIES COMPILE_FLAGS "-D PFFFT_ENABLE_NEON -Wno-strict-aliasing")
