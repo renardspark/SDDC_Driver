@@ -2,7 +2,7 @@
 
 [![CMake](https://github.com/renardspark/SDDC_Driver/actions/workflows/cmake.yml/badge.svg)](https://github.com/renardspark/SDDC_Driver/actions/workflows/cmake.yml)
 
-#### A set of drivers and tools for the BBRF103 and its derivatives (HF103, RX888, RX888r2...)
+#### A set of drivers and tools for the RX888 MkII and its variants (BBRF103, HF103, RX888...)
 
 This project includes the following components :
 - **/Core** : The main library controlling the SDR from a computer
@@ -14,14 +14,27 @@ This project includes the following components :
 - **/SDDC_FX3** : The firmware source code of the BBRF103 and others
 
 
-## Disclaimer
+## Differences with ExtIO_SDDC
 
-This project could not exist without the work of **[Oscar Steila (ik1xpv)](https://github.com/ik1xpv)** and others towards the development of the official BBRF103 (and derivatives) drivers in the **[ExtIO_sddc](https://github.com/ik1xpv/ExtIO_sddc)** repository. I'm truly thankful to all these contributors, who helped ExtIO_sddc go this far !
+This project could not exist without the work of **[Oscar Steila (ik1xpv)](https://github.com/ik1xpv)** and others towards the development of **the [original driver (ExtIO_SDDC)](https://github.com/ik1xpv/ExtIO_sddc)**.
 
-SDDC_Driver is my attempt as deeply rewriting the code of ExtIO_sddc in order to make it more clean and intuitive in my view.
-The objective is also to better separate the main driver code (Core module) from the ExtIO module, which was the only module available at the start of ExtIO_sddc.
+This fork brings the following improvements on top of ExtIO_SDDC :
+- Make Linux support the priority
+- Extend the features offered by libsddc and SoapySDDC
+- Provide a standalone tool (sddc-cli) to get samples from your SDR
+- Use any ADC sampling rate (ExtIO_SDDC only allows preconfigured choices)
+- Use libusb for all operating systems (no Cypress driver required)
+- Documentation (WIP) of the internal APIs
+- Resolve a handful of crashs
+- Improve memory safety
+- A deep refactor to better isolate each component and make the codebase more consistent
 
-**Warning** : Consider this fork as no longer compatible with Windows, as I've not tried it on this platform. On the other end, Linux and MacOS should be fine.
+Those changes comes with downsides :
+- Windows support is considered unstable (compilation works, but I've not tested with real hardware)
+- The performance can be worse as a result of the refactor
+- This driver cannot be used alongside ExtIO_SDDC on Windows computers.
+  This is because ExtIO_SDDC uses the Cypress driver, while SDDC_Driver embeds its own driver.
+  This issue is not present on other OSes.
 
 
 ## Getting started
@@ -30,6 +43,14 @@ You can download the latest binaries from the releases: https://github.com/renar
 
 If you want to give a try to the most recent build, the binaries are available [on Github Actions](https://github.com/renardspark/SDDC_Driver/actions/workflows/cmake.yml).
 
+### Windows
+
+**Warning** : Before using your SDR on Windows, drivers install is required to make it work.
+The procedure is explained in [Windows_driver_setup.md](blob/master/Windows_driver_setup.md)
+
+The ExtIO DLL is available for Windows (32 and 64 bit). It can be used with compatible SDRs such as HDSDR or SDR#.
+
+You need to download **32bit version** of [fftw](http://www.fftw.org/install/windows.html) and [libusb](https://libusb.info/), and copy them to the same folder as ExtIO DLL.
 
 ### Linux / MacOS
 
@@ -40,7 +61,7 @@ SoapySDR support is available on Linux / MacOS. It can be used with SDRs such as
 
 ### Windows
 
-1. Install Visual Studio 2019 with Visual C++ support. You can use the free community version, which can be downloaded from: https://visualstudio.microsoft.com/downloads/
+1. Install Visual Studio 2026 with Visual C++ support. You can use the free community version, which can be downloaded from: https://visualstudio.microsoft.com/downloads/
 1. Install CMake 3.19+, https://cmake.org/download/
 1. Running the following commands in the root folder of the cloned repro:
 ```bash
@@ -55,21 +76,19 @@ or
 
 * If you are running **64bit** OS, you need to run the following different commands instead of "cmake .." based on your Visual Studio Version:
 ```
-VS2022: >cmake .. -G "Visual Studio 17 2022" -A Win32
-VS2019: >cmake .. -G "Visual Studio 16 2019" -A Win32
-VS2017: >cmake .. -G "Visual Studio 15 2017 Win32"
-VS2015: >cmake .. -G "Visual Studio 14 2015 Win32"
+VS2022: >cmake -S . -B build/ -G "Visual Studio 18 2026" -A Win32
+VS2022: >cmake -S . -B build/ -G "Visual Studio 17 2022" -A Win32
+VS2019: >cmake -S . -B build/ -G "Visual Studio 16 2019" -A Win32
 ```
 
 ### Linux
 
-1. Install CMake 3.19+
-2. Install development packages:
+1. Install CMake 3.19+ and development packages:
 ```bash
-> sudo apt install libfftw3-dev libusb-1.0-0-dev
+> sudo apt install cmake libfftw3-dev libusb-1.0-0-dev
 ```
 
-3. Run the following commands in the root folder of the cloned repo:
+2. Run the following commands in the root folder of the cloned repo:
 ```bash
 > mkdir build
 > cmake -S . -B build/
