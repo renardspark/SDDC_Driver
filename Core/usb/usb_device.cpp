@@ -406,12 +406,15 @@ libusb_device* USBDevice::findUSBDevice(USBDeviceInfo device_def, bool strict)
     return nullptr;
   }
 
+  DebugPrintln(TAG, "USB device list:");
   for (ssize_t dev_index = 0; dev_index < list_length; dev_index++)
   {
     libusb_device *dev = list[dev_index];
 
     struct libusb_device_descriptor desc;
     libusb_get_device_descriptor(dev, &desc);
+
+    DebugPrintln(TAG, "- %04x:%04x %d %d %d", desc.idVendor, desc.idProduct, libusb_get_bus_number(dev), libusb_get_port_number(dev), libusb_get_device_address(dev));
 
     // Those checks are enough to make sure we target
     // the correct device (same device in the same physical port)
@@ -436,8 +439,8 @@ libusb_device* USBDevice::findUSBDevice(USBDeviceInfo device_def, bool strict)
       for(int i = 0; i < n_usb_device_ids; ++i)
       {
         if(desc.idVendor == usb_device_ids[i].vid &&
-          desc.idProduct == usb_device_ids[i].pid &&
-          libusb_get_bus_number(dev) == device_def.usb_bus_number)
+          desc.idProduct == usb_device_ids[i].pid/* &&
+          libusb_get_bus_number(dev) == device_def.usb_bus_number*/)
         {
           device = dev;
 

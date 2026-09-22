@@ -50,7 +50,7 @@ SoapySDR::KwargsList findSDDC(const SoapySDR::Kwargs&)
     for(auto sddc_device: device_list)
     {
         SoapySDR::Kwargs soapy_device;
-        soapy_device["index"] = count;
+        soapy_device["index"] = to_string(count);
         soapy_device["label"] = string(sddc_device.product);
         soapy_device["serial"] = string(sddc_device.serial_number);
         results.push_back(soapy_device);
