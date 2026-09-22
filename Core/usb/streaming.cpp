@@ -100,6 +100,7 @@ int USBDevice::streaming_open_async(uint32_t frame_size,
   }
 
   /* allocate frames for zerocopy USB bulk transfers */
+  transfer_buffers.resize(num_frames);
   for (uint32_t i = 0; i < num_frames; ++i) {
     #ifdef __linux__
     transfer_buffers[i] = libusb_dev_mem_alloc(dev_handle, frame_size);
@@ -133,6 +134,7 @@ int USBDevice::streaming_open_async(uint32_t frame_size,
   stream_callback_context = callback_context;
 
   /* populate the required libusb_transfer fields */
+  transfers.resize(num_frames);
   for (uint32_t i = 0; i < num_frames; ++i) {
     transfers[i] = libusb_alloc_transfer(0);
     libusb_fill_bulk_transfer(
